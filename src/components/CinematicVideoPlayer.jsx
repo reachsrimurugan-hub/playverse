@@ -62,6 +62,8 @@ const CinematicVideoPlayer = ({
   const [availableQualities, setAvailableQualities] = useState(['Auto', '1080p', '720p', '480p', '360p']);
   const [isTheaterMode, setIsTheaterMode] = useState(false);
   const [showSeekFeedback, setShowSeekFeedback] = useState({ type: 'forward', visible: false });
+  const [isQualitySwitching, setIsQualitySwitching] = useState(false);
+  const [switchingToLabel, setSwitchingToLabel] = useState('');
   
   const containerRef = useRef(null);
   const controlsTimeoutRef = useRef(null);
@@ -325,12 +327,40 @@ const CinematicVideoPlayer = ({
     resetControlsTimeout();
   };
 
+  const getQualityFilter = (quality) => {
+    switch (quality) {
+      case '144p':
+        return 'contrast(0.95) saturate(0.9) blur(1.8px)';
+      case '240p':
+        return 'contrast(0.98) saturate(0.95) blur(1.2px)';
+      case '360p':
+        return 'contrast(1) blur(0.6px)';
+      case '480p':
+        return 'contrast(1) blur(0.3px)';
+      case '720p':
+      case '1080p':
+      case 'Auto':
+      default:
+        return 'none';
+    }
+  };
+
   // Dynamic Quality Switcher via API
   const handleQualitySelect = (qualityLabel) => {
     if (!player) return;
+    
+    // Trigger simulated quality buffering rebuilding sequence
+    setIsQualitySwitching(true);
+    setSwitchingToLabel(qualityLabel);
+    
     const ytQualityValue = QUALITY_MAP[qualityLabel] || 'auto';
     player.setPlaybackQuality(ytQualityValue);
-    setCurrentQuality(qualityLabel);
+    
+    setTimeout(() => {
+      setCurrentQuality(qualityLabel);
+      setIsQualitySwitching(false);
+    }, 1200);
+
     setShowSettingsMenu(false);
     setSettingsTab('main');
     resetControlsTimeout();
@@ -382,7 +412,10 @@ const CinematicVideoPlayer = ({
       className="relative w-full aspect-video md:rounded-3xl overflow-hidden group bg-black"
     >
       {/* Background Iframe */}
-      <div className="absolute inset-0 w-full h-full pointer-events-none scale-105 select-none">
+      <div 
+        className="absolute inset-0 w-full h-full pointer-events-none scale-105 select-none transition-all duration-500"
+        style={{ filter: getQualityFilter(currentQuality) }}
+      >
         <YouTube
           videoId={videoId}
           opts={YOUTUBE_PLAYER_OPTS}
@@ -436,6 +469,26 @@ const CinematicVideoPlayer = ({
           >
             <div className="relative w-14 h-14 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
             <p className="mt-4 text-[10px] font-black uppercase tracking-[0.25em] text-orange-500">Buffering Stream</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Quality Switch buffering Overlay */}
+      <AnimatePresence>
+        {isQualitySwitching && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-45 flex flex-col items-center justify-center bg-black/80 backdrop-blur-[3px] pointer-events-none animate-fade-in"
+          >
+            <div className="relative w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
+            <p className="mt-4 text-[10px] font-black uppercase tracking-[0.25em] text-orange-500">
+              Adjusting Stream Resolution to {switchingToLabel}
+            </p>
+            <span className="mt-1 text-[8px] text-white/40 uppercase tracking-widest font-mono">
+              Rebuilding stream buffer
+            </span>
           </motion.div>
         )}
       </AnimatePresence>
