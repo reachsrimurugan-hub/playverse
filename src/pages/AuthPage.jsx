@@ -57,39 +57,118 @@ const AuthPage = () => {
 
     setLoading(true);
     setErrors({});
+    const normalizedEmail = form.email.trim().toLowerCase();
+
     try {
       if (activeTab === 'register') {
-        // Sign Up
-        const response = await axios.post(`${API_URL}/auth/register`, {
-          username: form.name,
-          email: form.email,
-          password: form.password
-        });
-        
-        if (response.data.success) {
-          const registeredUser = response.data.user;
-          localStorage.setItem('nextube_profile', JSON.stringify(registeredUser));
-          localStorage.setItem('nextube_logged_in', 'true');
-          navigate('/');
+        // 1. Try Backend API for Sign Up
+        try {
+          const response = await axios.post(`${API_URL}/auth/register`, {
+            username: form.name,
+            email: normalizedEmail,
+            password: form.password
+          });
+          
+          if (response.data.success) {
+            const registeredUser = response.data.user;
+            localStorage.setItem('nextube_profile', JSON.stringify(registeredUser));
+            localStorage.setItem('nextube_logged_in', 'true');
+            navigate('/');
+            return;
+          }
+        } catch (apiError) {
+          // If the backend specifically rejected with 400 (e.g. duplicate user), show that exact error
+          if (apiError.response && apiError.response.status === 400) {
+            const msg = apiError.response.data?.error || 'User with this email already exists';
+            setErrors({ server: msg });
+            setLoading(false);
+            return;
+          }
+          // If connection was refused or general network error, trigger LocalStorage fallback DB
+          console.warn("API Register failed, trying client-side LocalStorage DB fallback:", apiError.message);
+          throw apiError;
         }
       } else {
-        // Sign In
-        const response = await axios.post(`${API_URL}/auth/login`, {
-          email: form.email,
-          password: form.password
-        });
-        
-        if (response.data.success) {
-          const loggedInUser = response.data.user;
-          localStorage.setItem('nextube_profile', JSON.stringify(loggedInUser));
-          localStorage.setItem('nextube_logged_in', 'true');
-          navigate('/');
+        // 2. Try Backend API for Sign In
+        try {
+          const response = await axios.post(`${API_URL}/auth/login`, {
+            email: normalizedEmail,
+            password: form.password
+          });
+          
+          if (response.data.success) {
+            const loggedInUser = response.data.user;
+            localStorage.setItem('nextube_profile', JSON.stringify(loggedInUser));
+            localStorage.setItem('nextube_logged_in', 'true');
+            navigate('/');
+            return;
+          }
+        } catch (apiError) {
+          // If the backend explicitly returned a 401/400 validation error, display it directly
+          if (apiError.response && (apiError.response.status === 401 || apiError.response.status === 400)) {
+            const msg = apiError.response.data?.error || 'Invalid email or password';
+            setErrors({ server: msg });
+            setLoading(false);
+            return;
+          }
+          console.warn("API Login failed, trying client-side LocalStorage DB fallback:", apiError.message);
+          throw apiError;
         }
       }
-    } catch (error) {
-      console.error('Authentication error:', error);
-      const serverMessage = error.response?.data?.error || 'Authentication failed. Please try again.';
-      setErrors({ server: serverMessage });
+    } catch (fallbackTrigger) {
+      // client-side LocalStorage DB Fallback
+      const localUsers = JSON.parse(localStorage.getItem('nextube_local_users') || '[]');
+      
+      // Seed seeded user from users.json if the list is empty
+      if (localUsers.length === 0) {
+        localUsers.push({
+          username: "sri",
+          email: "reachsrimurugan@gmail.com",
+          password: "password123",
+          tier: "Cinema Elite",
+          avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop",
+          joined: "May 2026"
+        });
+        localStorage.setItem('nextube_local_users', JSON.stringify(localUsers));
+      }
+
+      if (activeTab === 'register') {
+        const exists = localUsers.some(u => u.email.toLowerCase() === normalizedEmail);
+        if (exists) {
+          setErrors({ server: 'User with this email already exists' });
+          setLoading(false);
+          return;
+        }
+
+        const newUser = {
+          username: form.name,
+          email: normalizedEmail,
+          password: form.password,
+          tier: 'Cinema Elite',
+          avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop',
+          joined: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+        };
+
+        localUsers.push(newUser);
+        localStorage.setItem('nextube_local_users', JSON.stringify(localUsers));
+        localStorage.setItem('nextube_profile', JSON.stringify(newUser));
+        localStorage.setItem('nextube_logged_in', 'true');
+        navigate('/');
+      } else {
+        const user = localUsers.find(
+          u => u.email.toLowerCase() === normalizedEmail && u.password === form.password
+        );
+        
+        if (!user) {
+          setErrors({ server: 'Invalid email or password' });
+          setLoading(false);
+          return;
+        }
+
+        localStorage.setItem('nextube_profile', JSON.stringify(user));
+        localStorage.setItem('nextube_logged_in', 'true');
+        navigate('/');
+      }
     } finally {
       setLoading(false);
     }
