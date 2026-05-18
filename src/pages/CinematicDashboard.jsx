@@ -6,6 +6,7 @@ import VideoListItem from '../components/VideoListItem';
 import VideoGridCard from '../components/VideoGridCard';
 import { getPopularMovies, searchVideos } from '../services/cinematicApi';
 import { LayoutGrid, Flame, Film, Music, Tv, Play } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 const DASHBOARD_CATEGORIES = [
   { name: 'All', icon: LayoutGrid, term: 'All' },
@@ -17,6 +18,7 @@ const DASHBOARD_CATEGORIES = [
 
 const CinematicDashboard = () => {
   const navigate = useNavigate();
+  const { selectedLanguage } = useLanguage();
   const [heroVideo, setHeroVideo] = useState(null);
   const [allVideos, setAllVideos] = useState([]);
   const [visibleCount, setVisibleCount] = useState(20);
@@ -31,33 +33,43 @@ const CinematicDashboard = () => {
   }, []);
 
   const fetchDashboardContent = useCallback(
-    async (category = 'All', searchVal = '') => {
+    async (category = 'All', searchVal = '', lang = selectedLanguage) => {
       setLoading(true);
       setVisibleCount(20);
       try {
         let results = [];
+        const langName = lang?.name || 'English';
+        const languagePrefix = `${langName} `;
+
         if (searchVal) {
-          results = await searchVideos(searchVal);
-        } else if (category === 'All' || category === 'Trending') {
-          const popular = await getPopularMovies();
-          results = popular || [];
-          if (popular?.length > 0 && !heroVideo) setHeroVideo(popular[0]);
+          results = await searchVideos(`${languagePrefix}${searchVal}`);
+        } else if (category === 'All') {
+          // Home displays Music content filtered by selected language
+          results = await searchVideos(`${languagePrefix}Music`);
+          if (results && results.length > 0) {
+            setHeroVideo(results[0]);
+          }
+        } else if (category === 'Trending') {
+          results = await searchVideos(`${languagePrefix}Trending Music`);
+          if (results && results.length > 0) {
+            setHeroVideo(results[0]);
+          }
         } else {
-          results = await searchVideos(category);
+          results = await searchVideos(`${languagePrefix}${category}`);
         }
-        setAllVideos(results);
+        setAllVideos(results || []);
       } catch (error) {
         console.error('Failed to fetch dashboard content', error);
       } finally {
         setLoading(false);
       }
     },
-    [heroVideo]
+    [selectedLanguage]
   );
 
   useEffect(() => {
-    fetchDashboardContent(activeCategory, searchQuery);
-  }, []);
+    fetchDashboardContent(activeCategory, searchQuery, selectedLanguage);
+  }, [selectedLanguage, activeCategory, searchQuery, fetchDashboardContent]);
 
   const displayedVideos = useMemo(() => allVideos.slice(0, visibleCount), [allVideos, visibleCount]);
 

@@ -4,6 +4,7 @@ import CinematicNavbar from '../components/CinematicNavbar';
 import DesktopBrowseSidebar from '../components/DesktopBrowseSidebar';
 import VideoGridCard from '../components/VideoGridCard';
 import { searchVideos, getPopularMovies } from '../services/cinematicApi';
+import { useLanguage } from '../context/LanguageContext';
 
 const FILTER_PILLS = [
   { label: 'All', to: '/category/All' },
@@ -15,6 +16,7 @@ const FILTER_PILLS = [
 const CategoryPage = () => {
   const { categoryName } = useParams();
   const navigate = useNavigate();
+  const { selectedLanguage } = useLanguage();
   const [videos, setVideos] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -25,14 +27,18 @@ const CategoryPage = () => {
     try {
       let results = [];
       const key = decoded || '';
+      const langName = selectedLanguage?.name || 'English';
+      const languagePrefix = `${langName} `;
+
       if (key === 'All' || !key) {
-        results = await getPopularMovies();
+        // Fallback to music in the selected language for main dashboard category
+        results = await searchVideos(`${languagePrefix}Music`);
       } else if (key === 'Top Rated') {
-        results = await searchVideos('top rated movies');
+        results = await searchVideos(`${languagePrefix}top rated movies`);
       } else if (key === 'New Releases') {
-        results = await searchVideos('new movie trailers');
+        results = await searchVideos(`${languagePrefix}new movie trailers`);
       } else {
-        results = await searchVideos(key);
+        results = await searchVideos(`${languagePrefix}${key}`);
       }
       setVideos(results || []);
     } catch (error) {
@@ -40,7 +46,7 @@ const CategoryPage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [decoded]);
+  }, [decoded, selectedLanguage]);
 
   useEffect(() => {
     fetchCategoryVideos();

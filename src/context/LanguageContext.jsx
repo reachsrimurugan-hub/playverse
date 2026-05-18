@@ -14,7 +14,7 @@ export const languages = [
 ];
 
 export const LanguageProvider = ({ children }) => {
-  const [selectedLanguage, setSelectedLanguage] = useState(languages[0]);
+  const [selectedLanguage, setSelectedLanguage] = useState(languages.find(l => l.code === 'ta') || languages[0]);
 
   return (
     <LanguageContext.Provider value={{ selectedLanguage, setSelectedLanguage }}>

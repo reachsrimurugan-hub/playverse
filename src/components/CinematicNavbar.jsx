@@ -2,11 +2,12 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, Link, NavLink } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Bell, ChevronDown, Search, Home, Plus, Play, User, Settings, History, 
+  ChevronDown, Search, Home, Plus, Play, User, Settings, History, 
   Library, LogOut, LogIn, Menu, X,
-  ChevronRight, Pencil, HelpCircle, Sparkles
+  ChevronRight, Pencil, HelpCircle, Sparkles, Globe
 } from 'lucide-react';
 import debounce from 'lodash.debounce';
+import { useLanguage, languages } from '../context/LanguageContext';
 
 const NAV_LINKS = [
   { label: 'Home', to: '/' },
@@ -28,6 +29,10 @@ const CinematicNavbar = ({ onSearch, searchResults = [], onVideoSelect }) => {
   const [userProfile, setUserProfile] = useState(null);
 
   const profileRef = useRef(null);
+  const languageRef = useRef(null);
+
+  const { selectedLanguage, setSelectedLanguage } = useLanguage();
+  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
 
   useEffect(() => {
     const loggedIn = localStorage.getItem('nextube_logged_in') === 'true';
@@ -60,6 +65,9 @@ const CinematicNavbar = ({ onSearch, searchResults = [], onVideoSelect }) => {
     const handleClickOutside = (event) => {
       if (profileRef.current && !profileRef.current.contains(event.target)) {
         setShowProfileDropdown(false);
+      }
+      if (languageRef.current && !languageRef.current.contains(event.target)) {
+        setShowLanguageDropdown(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -258,14 +266,47 @@ const CinematicNavbar = ({ onSearch, searchResults = [], onVideoSelect }) => {
                     <Search size={22} />
                   </button>
 
-                  <button
-                    type="button"
-                    className="hidden lg:flex relative p-2.5 rounded-xl text-[#8e8e93] hover:text-white hover:bg-white/[0.06] transition-colors"
-                    aria-label="Notifications"
-                  >
-                    <Bell size={22} />
-                    <span className="absolute top-2 right-2 w-2 h-2 bg-[#f97316] rounded-full ring-2 ring-black" />
-                  </button>
+                  {/* Language Selector Button */}
+                  <div className="hidden lg:block relative" ref={languageRef}>
+                    <button
+                      type="button"
+                      onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
+                      className="relative p-2.5 rounded-xl text-[#8e8e93] hover:text-white hover:bg-white/[0.06] transition-colors flex items-center gap-1.5 cursor-pointer"
+                      aria-label="Select Language"
+                    >
+                      <Globe size={20} />
+                      <span className="text-xs font-bold">{selectedLanguage?.name || 'English'}</span>
+                    </button>
+
+                    <AnimatePresence>
+                      {showLanguageDropdown && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: 15 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 15 }}
+                          className="absolute top-full right-0 mt-3 w-40 glass-dark border border-white/10 rounded-2xl shadow-3xl overflow-hidden py-2 z-50"
+                        >
+                          <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest px-4 py-1.5">Languages</p>
+                          {languages.map((lang) => (
+                            <button
+                              key={lang.code}
+                              onClick={() => {
+                                setSelectedLanguage(lang);
+                                setShowLanguageDropdown(false);
+                              }}
+                              className={`w-full flex items-center justify-between px-4 py-2.5 text-xs font-bold transition-all text-left ${
+                                selectedLanguage?.code === lang.code
+                                  ? 'text-[#f97316] bg-white/5'
+                                  : 'text-white/70 hover:text-white hover:bg-white/5'
+                              }`}
+                            >
+                              {lang.name}
+                            </button>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
 
                   {/* Hamburger menu button in the right for mobile/tablet */}
                   <button 

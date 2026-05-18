@@ -62,13 +62,6 @@ const CinematicHero = ({ video, onPlay }) => {
               My List
             </button>
           </div>
-
-          <div className="flex justify-center gap-2 pt-2 pb-1">
-            <span className="w-5 h-1.5 bg-[#f97316] rounded-full" />
-            <span className="w-1.5 h-1.5 bg-white/30 rounded-full" />
-            <span className="w-1.5 h-1.5 bg-white/30 rounded-full" />
-            <span className="w-1.5 h-1.5 bg-white/30 rounded-full" />
-          </div>
         </div>
       </div>
     </section>

@@ -4,11 +4,13 @@ import CinematicNavbar from '../components/CinematicNavbar';
 import DesktopBrowseSidebar from '../components/DesktopBrowseSidebar';
 import VideoGridCard from '../components/VideoGridCard';
 import VideoListItem from '../components/VideoListItem';
-import { getTrendingTrailers } from '../services/cinematicApi';
+import { getTrendingTrailers, searchVideos } from '../services/cinematicApi';
 import { Flame } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 const TrendingPage = () => {
   const navigate = useNavigate();
+  const { selectedLanguage } = useLanguage();
   const [trendingVideos, setTrendingVideos] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -16,7 +18,8 @@ const TrendingPage = () => {
     const fetchTrending = async () => {
       setLoading(true);
       try {
-        const results = await getTrendingTrailers();
+        const langName = selectedLanguage?.name || 'English';
+        const results = await searchVideos(`${langName} Trending Music`);
         setTrendingVideos(results || []);
       } catch (error) {
         console.error('Failed to fetch trending videos', error);
@@ -26,7 +29,7 @@ const TrendingPage = () => {
     };
     fetchTrending();
     window.scrollTo(0, 0);
-  }, []);
+  }, [selectedLanguage]);
 
   const handleVideoSelect = (video) => {
     navigate(`/watch/${video.videoId || video.id}`);

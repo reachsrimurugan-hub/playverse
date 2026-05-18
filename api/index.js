@@ -4,6 +4,10 @@ const axios = require('axios');
 const NodeCache = require('node-cache');
 const path = require('path');
 
+// Load environment variables from both root and server directories
+require('dotenv').config();
+require('dotenv').config({ path: path.join(__dirname, '../server/.env') });
+
 const app = express();
 const port = process.env.PORT || 5000;
 const cache = new NodeCache({ stdTTL: 3600 }); // Cache for 1 hour
@@ -147,7 +151,7 @@ app.get(['/api/videos/:id', '/videos/:id'], async (req, res) => {
   }
 });
 
-// 4. Get Related Videos
+// 4. Get Related Videos (Robust fallback for deprecated relatedToVideoId)
 app.get(['/api/videos/:id/related', '/videos/:id/related'], async (req, res) => {
   const { id } = req.params;
   const cacheKey = `related_${id}`;
@@ -155,34 +159,79 @@ app.get(['/api/videos/:id/related', '/videos/:id/related'], async (req, res) => 
   if (cachedData) return res.json(cachedData);
 
   try {
-    const response = await axios.get(`${YOUTUBE_API_BASE_URL}/search`, {
+    // 1. Get current video details to find its title and category
+    const videoDetailsResponse = await axios.get(`${YOUTUBE_API_BASE_URL}/videos`, {
       params: {
         part: 'snippet',
-        relatedToVideoId: id,
-        type: 'video',
-        maxResults: 10,
+        id: id,
         key: API_KEY
       }
     });
 
-    // For related, we might not have contentDetails easily without another call
-    // But for the sidebar, simple normalization is often enough
-    const videoIds = response.data.items.map(item => item.id.videoId).join(',');
-    
-    const detailsResponse = await axios.get(`${YOUTUBE_API_BASE_URL}/videos`, {
-      params: {
-        part: 'snippet,statistics,contentDetails',
-        id: videoIds,
-        key: API_KEY
-      }
-    });
+    let processed = [];
 
-    const processed = processVideos(detailsResponse.data.items);
+    if (videoDetailsResponse.data.items && videoDetailsResponse.data.items.length > 0) {
+      const currentVideo = videoDetailsResponse.data.items[0];
+      const title = currentVideo.snippet.title;
+      const categoryId = currentVideo.snippet.categoryId;
+
+      // Extract the first 3 words of the title to get relevant keyword suggestions
+      const query = title.split(' ').slice(0, 3).join(' ').replace(/[^\w\s]/gi, '');
+
+      // 2. Perform a keyword search using the title query (accurate fallback)
+      try {
+        const searchResponse = await axios.get(`${YOUTUBE_API_BASE_URL}/search`, {
+          params: {
+            part: 'snippet',
+            q: query,
+            type: 'video',
+            maxResults: 15,
+            key: API_KEY
+          }
+        });
+
+        const videoIds = searchResponse.data.items
+          .map(item => item.id.videoId)
+          .filter(videoId => videoId && videoId !== id)
+          .join(',');
+
+        if (videoIds) {
+          const detailsResponse = await axios.get(`${YOUTUBE_API_BASE_URL}/videos`, {
+            params: {
+              part: 'snippet,statistics,contentDetails',
+              id: videoIds,
+              key: API_KEY
+            }
+          });
+          processed = processVideos(detailsResponse.data.items);
+        }
+      } catch (searchError) {
+        console.error('Search-based related videos fallback failed, trying category fallback:', searchError.message);
+      }
+
+      // 3. Quota-friendly Category-based fallback if search failed or returned empty
+      if (processed.length === 0 && categoryId) {
+        try {
+          const categoryResponse = await axios.get(`${YOUTUBE_API_BASE_URL}/videos`, {
+            params: {
+              part: 'snippet,statistics,contentDetails',
+              chart: 'mostPopular',
+              videoCategoryId: categoryId,
+              maxResults: 15,
+              key: API_KEY
+            }
+          });
+          processed = processVideos(categoryResponse.data.items.filter(item => item.id !== id));
+        } catch (categoryError) {
+          console.error('Category-based related videos fallback failed:', categoryError.message);
+        }
+      }
+    }
+
     cache.set(cacheKey, processed);
     res.json(processed);
   } catch (error) {
     console.error('Related videos error:', error.message);
-    // Fallback to empty instead of 500
     res.json([]);
   }
 });

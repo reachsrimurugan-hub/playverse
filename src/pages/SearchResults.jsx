@@ -7,10 +7,12 @@ import VideoListItem from '../components/VideoListItem';
 import VideoGridCard from '../components/VideoGridCard';
 import { ChevronLeft, X, SlidersHorizontal, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useLanguage } from '../context/LanguageContext';
 
 const SearchResults = () => {
   const { searchTerm = '' } = useParams();
   const navigate = useNavigate();
+  const { selectedLanguage } = useLanguage();
   const [videos, setVideos] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [query, setQuery] = useState(searchTerm);
@@ -21,7 +23,9 @@ const SearchResults = () => {
     const fetchResults = async () => {
       setIsLoading(true);
       try {
-        const results = await searchVideos(searchTerm);
+        const langName = selectedLanguage?.name || 'English';
+        const languagePrefix = `${langName} `;
+        const results = await searchVideos(`${languagePrefix}${searchTerm}`);
         setVideos(results || []);
       } catch (error) {
         console.error('Failed to fetch videos', error);
@@ -30,7 +34,7 @@ const SearchResults = () => {
       }
     };
     if (searchTerm) fetchResults();
-  }, [searchTerm]);
+  }, [searchTerm, selectedLanguage]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
