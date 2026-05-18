@@ -186,6 +186,10 @@ app.get('/api/videos/:id/related', async (req, res) => {
   }
 });
 
-app.listen(port, () => {
-  console.log(`Nextube Backend running on port ${port}`);
-});
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+  app.listen(port, () => {
+    console.log(`Nextube Backend running on port ${port}`);
+  });
+}
+
+module.exports = app;
