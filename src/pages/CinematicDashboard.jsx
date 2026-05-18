@@ -41,19 +41,24 @@ const CinematicDashboard = () => {
         const langName = lang?.name || 'English';
         const languagePrefix = `${langName} `;
 
+        // 1. Fetch hero video: latest movie trailer in the selected language
+        try {
+          const heroResults = await searchVideos(`${languagePrefix}latest movie trailer`);
+          if (heroResults && heroResults.length > 0) {
+            setHeroVideo(heroResults[0]);
+          }
+        } catch (heroError) {
+          console.error('Failed to fetch hero video:', heroError.message);
+        }
+
+        // 2. Fetch grid results
         if (searchVal) {
           results = await searchVideos(`${languagePrefix}${searchVal}`);
         } else if (category === 'All') {
           // Home displays Music content filtered by selected language
           results = await searchVideos(`${languagePrefix}Music`);
-          if (results && results.length > 0) {
-            setHeroVideo(results[0]);
-          }
         } else if (category === 'Trending') {
           results = await searchVideos(`${languagePrefix}Trending Music`);
-          if (results && results.length > 0) {
-            setHeroVideo(results[0]);
-          }
         } else {
           results = await searchVideos(`${languagePrefix}${category}`);
         }
