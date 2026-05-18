@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Shield, User, Lock, Mail, ChevronRight } from 'lucide-react';
 import axios from 'axios';
+import playButtonImg from '../assets/play-button.png';
 
 const API_URL = import.meta.env.VITE_API_URL || (
   typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
@@ -126,7 +127,7 @@ const AuthPage = () => {
           email: "reachsrimurugan@gmail.com",
           password: "password123",
           tier: "Cinema Elite",
-          avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop",
+          avatar: "src/assets/man1.png",
           joined: "May 2026"
         });
         localStorage.setItem('nextube_local_users', JSON.stringify(localUsers));
@@ -145,7 +146,7 @@ const AuthPage = () => {
           email: normalizedEmail,
           password: form.password,
           tier: 'Cinema Elite',
-          avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop',
+          avatar: 'src/assets/man1.png',
           joined: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
         };
 
@@ -191,9 +192,13 @@ const AuthPage = () => {
           <motion.div 
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="w-14 h-14 bg-orange-500 rounded-3xl flex items-center justify-center font-black text-white text-lg shadow-xl shadow-orange-500/20 mx-auto"
+            className="w-16 h-16 bg-gradient-to-tr from-orange-600 to-orange-400 rounded-[1.25rem] flex items-center justify-center shadow-xl shadow-orange-500/25 mx-auto overflow-hidden p-2 border border-white/10"
           >
-            PV
+            <img 
+              src={playButtonImg} 
+              alt="PlayVerse" 
+              className="w-full h-full object-contain" 
+            />
           </motion.div>
           <motion.h1 
             initial={{ y: 10, opacity: 0 }}
