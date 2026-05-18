@@ -7,6 +7,8 @@ const QuotaDashboard = () => {
   const [usage, setUsage] = useState(quotaTracker.getUsage());
   const [isOpen, setIsOpen] = useState(false);
 
+  const [dragLimits, setDragLimits] = useState({ left: 0, right: 0, top: 0, bottom: 0 });
+
   useEffect(() => {
     // Update usage every time the dashboard is opened
     if (isOpen) {
@@ -14,21 +16,43 @@ const QuotaDashboard = () => {
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    const updateLimits = () => {
+      // Calculate dynamic bounds relative to bottom-6 right-6 fixed positioning
+      setDragLimits({
+        left: -window.innerWidth + 72,
+        right: 12,
+        top: -window.innerHeight + 72,
+        bottom: 12
+      });
+    };
+
+    updateLimits();
+    window.addEventListener('resize', updateLimits);
+    return () => window.removeEventListener('resize', updateLimits);
+  }, []);
+
   const percentage = (usage.total / usage.dailyLimit) * 100;
   const isHighUsage = percentage > 80;
 
   return (
     <>
-      {/* Floating Toggle Button */}
-      <button 
-        onClick={() => setIsOpen(true)}
-        className={`fixed bottom-6 right-6 w-12 h-12 rounded-full flex items-center justify-center shadow-2xl z-[200] transition-all ${
+      {/* Floating Toggle Button - Movable / Draggable on Mobile */}
+      <motion.button 
+        drag
+        dragConstraints={dragLimits}
+        dragElastic={0.1}
+        dragMomentum={true}
+        whileDrag={{ scale: 1.15 }}
+        onTap={() => setIsOpen(true)}
+        className={`fixed bottom-6 right-6 w-12 h-12 rounded-full flex items-center justify-center shadow-2xl z-[200] cursor-grab active:cursor-grabbing transition-all ${
           isHighUsage ? 'bg-red-600 animate-pulse' : 'bg-amber-500'
         } text-white hover:scale-110`}
+        style={{ touchAction: 'none' }}
         title="API Quota Monitor"
       >
         <FiActivity size={24} />
-      </button>
+      </motion.button>
 
       <AnimatePresence>
         {isOpen && (
