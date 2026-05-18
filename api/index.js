@@ -76,7 +76,11 @@ app.get(['/api/videos', '/videos'], async (req, res) => {
     res.json(processed);
   } catch (error) {
     console.error('Error fetching popular videos:', error.message);
-    res.status(500).json({ error: 'Failed to fetch videos' });
+    res.status(500).json({ 
+      error: 'Failed to fetch popular videos', 
+      details: error.message, 
+      response: error.response?.data 
+    });
   }
 });
 
@@ -118,7 +122,11 @@ app.get(['/api/search', '/search'], async (req, res) => {
     res.json(processed);
   } catch (error) {
     console.error('Search error:', error.message);
-    res.status(500).json({ error: 'Search failed' });
+    res.status(500).json({ 
+      error: 'Search failed', 
+      details: error.message, 
+      response: error.response?.data 
+    });
   }
 });
 
@@ -147,7 +155,11 @@ app.get(['/api/videos/:id', '/videos/:id'], async (req, res) => {
     res.json(normalized);
   } catch (error) {
     console.error('Video detail error:', error.message);
-    res.status(500).json({ error: 'Failed to fetch video details' });
+    res.status(500).json({ 
+      error: 'Failed to fetch video details', 
+      details: error.message, 
+      response: error.response?.data 
+    });
   }
 });
 
