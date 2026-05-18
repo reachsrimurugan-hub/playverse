@@ -1,11 +1,15 @@
 @import "tailwindcss";
 
 @theme {
-  --color-yt-bg: #0f0f0f;
-  --color-yt-light: #272727;
-  --color-yt-hover: #3f3f3f;
-  --color-yt-text: #f1f1f1;
-  --color-yt-textMuted: #aaaaaa;
+  --color-pv-bg: #000000;
+  --color-pv-card: #1a1a1a;
+  --color-pv-muted: #8e8e93;
+  --color-pv-accent: #f97316;
+  --color-yt-bg: #000000;
+  --color-yt-light: #1a1a1a;
+  --color-yt-hover: #2a2a2a;
+  --color-yt-text: #ffffff;
+  --color-yt-textMuted: #8e8e93;
   --color-accent: #f97316;
   --color-accent-glow: rgba(249, 115, 22, 0.4);
 }
@@ -17,9 +21,38 @@
     overflow-y: auto;
   }
   body {
-    @apply bg-[#0a0502] text-white selection:bg-orange-500/30;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    @apply bg-black text-white selection:bg-orange-500/30;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   }
+}
+
+/* PlayVerse mobile page shell */
+.pv-page {
+  @apply min-h-screen bg-black text-white pb-24 md:pb-8;
+}
+
+.pv-main {
+  @apply relative z-10 pt-[72px] px-4 max-w-2xl mx-auto md:max-w-4xl lg:max-w-6xl md:px-8 lg:px-12;
+}
+
+.pv-section-title {
+  @apply text-base font-bold text-white;
+}
+
+.pv-view-all {
+  @apply text-sm font-semibold text-[#f97316] hover:text-orange-400 transition-colors;
+}
+
+.pv-tab {
+  @apply text-sm font-medium pb-2 relative transition-colors;
+}
+
+.pv-tab-active {
+  @apply text-[#f97316];
+}
+
+.pv-tab-inactive {
+  @apply text-[#8e8e93] hover:text-white;
 }
 
 .cinematic-bg {
@@ -120,6 +153,10 @@
 
 ::selection {
   @apply bg-orange-500/30 text-white;
+}
+
+.safe-area-pb {
+  padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
 }
 
 /* Mouse Follow Ambient Glow */

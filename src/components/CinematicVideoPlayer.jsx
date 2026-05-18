@@ -379,7 +379,7 @@ const CinematicVideoPlayer = ({
       ref={containerRef}
       onMouseMove={resetControlsTimeout}
       onMouseLeave={() => isPlaying && setShowControls(false)}
-      className="relative w-full aspect-video rounded-2xl md:rounded-[2.5rem] overflow-hidden group shadow-[0_20px_80px_rgba(0,0,0,0.9)] bg-black border border-white/5"
+      className="relative w-full aspect-video md:rounded-3xl overflow-hidden group bg-black"
     >
       {/* Background Iframe */}
       <div className="absolute inset-0 w-full h-full pointer-events-none scale-105 select-none">

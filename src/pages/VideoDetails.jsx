@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import CinematicNavbar from '../components/CinematicNavbar';
 import CinematicVideoPlayer from '../components/CinematicVideoPlayer';
@@ -33,22 +33,6 @@ const VideoDetails = () => {
     { id: 3, author: 'Emma Watson', text: 'Stunning direction. Looking forward to sharing this with my circle.', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=100&auto=format&fit=crop', likes: 45, time: '1 day ago' }
   ]);
   const [newComment, setNewComment] = useState('');
-
-  const mouseGlowRef = useRef(null);
-
-  useEffect(() => {
-    const isHoverDevice = window.matchMedia('(hover: hover)').matches;
-    if (!isHoverDevice) return;
-
-    const handleMouseMove = (e) => {
-      if (mouseGlowRef.current) {
-        mouseGlowRef.current.style.left = `${e.clientX}px`;
-        mouseGlowRef.current.style.top = `${e.clientY}px`;
-      }
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
 
   const triggerToast = (msg) => {
     setToastMessage(msg);
@@ -172,25 +156,9 @@ const VideoDetails = () => {
   };
 
   const [showInfoOverlay, setShowInfoOverlay] = useState(false);
-  const [showNavbar, setShowNavbar] = useState(false);
-
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      // If cursor coordinates are in the top 100px of the viewport, reveal the navbar.
-      if (e.clientY < 100) {
-        setShowNavbar(true);
-      } else {
-        setShowNavbar(false);
-      }
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
 
   if (loading && !video) return (
-    <div className="relative w-full h-screen flex flex-col items-center justify-center bg-[#0a0502] text-white">
-      <div className="cinematic-bg" />
-      <div className="grain" />
+    <div className="relative w-full h-screen flex flex-col items-center justify-center bg-black text-white">
       <div className="flex flex-col items-center gap-6 z-10">
         <motion.div
           animate={{ rotate: 360 }}
@@ -203,13 +171,12 @@ const VideoDetails = () => {
   );
 
   if (!video && !loading) return (
-    <div className="relative w-full h-screen flex flex-col items-center justify-center bg-[#0a0502] text-white">
-      <div className="cinematic-bg" />
-      <div className="glass-premium p-12 rounded-[3rem] text-center max-w-md mx-4 relative z-10">
+    <div className="relative w-full h-screen flex flex-col items-center justify-center bg-black text-white">
+      <div className="glass-premium p-6 sm:p-12 rounded-2xl sm:rounded-[3rem] text-center max-w-md mx-4 relative z-10">
         <Info size={32} className="text-orange-500 mx-auto mb-6" />
         <h2 className="text-2xl font-black mb-2">Content Unavailable</h2>
         <p className="text-white/40 text-sm mb-8">This video may have been removed or is restricted in your region.</p>
-        <button onClick={() => navigate('/')} className="bg-orange-500 text-white px-10 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest">
+        <button onClick={() => navigate('/')} className="bg-orange-500 text-white px-10 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest cursor-pointer shadow-lg shadow-orange-500/25">
           Explore More Content
         </button>
       </div>
@@ -217,21 +184,8 @@ const VideoDetails = () => {
   );
 
   return (
-    <div className="relative min-h-screen bg-[#070301] text-white selection:bg-orange-500/30 overflow-x-hidden">
-      {/* Cinematic Ambient Glow */}
-      <div className="cinematic-bg" />
-      <div className="grain" />
-      <div ref={mouseGlowRef} className="mouse-glow" />
-
-      {/* Floating Interactive Navbar Wrapper */}
-      <motion.div
-        initial={{ y: -100, opacity: 0 }}
-        animate={{ y: showNavbar ? 0 : -100, opacity: showNavbar ? 1 : 0 }}
-        transition={{ duration: 0.35, ease: "easeOut" }}
-        className="fixed top-0 left-0 w-full z-[100] pointer-events-auto"
-      >
-        <CinematicNavbar onVideoSelect={handleVideoSelect} />
-      </motion.div>
+    <div className="relative min-h-screen bg-black text-white overflow-x-hidden pb-10">
+      <CinematicNavbar onVideoSelect={handleVideoSelect} />
 
       {/* Floating Notifications Toast */}
       <AnimatePresence>
@@ -316,13 +270,10 @@ const VideoDetails = () => {
       </AnimatePresence>
 
       {/* Immersive Watch Page Layout with dynamic animated top padding */}
-      <div 
-        className="w-full flex flex-col transition-all duration-300 ease-out"
-        style={{ paddingTop: showNavbar ? '110px' : '16px' }}
-      >
+      <div className="w-full flex flex-col pt-[4.5rem] lg:pt-20">
         
         {/* Back navigation header */}
-        <div className="max-w-[1700px] w-full mx-auto px-4 sm:px-6 md:px-12 lg:px-16 xl:px-24 py-3 flex items-center justify-between">
+        <div className="max-w-[1700px] w-full mx-auto px-4 sm:px-6 lg:px-10 py-3 flex items-center justify-between">
           <button
             onClick={() => navigate(-1)}
             className="flex items-center gap-2 text-white/50 hover:text-orange-500 transition-colors group cursor-pointer"
@@ -338,7 +289,7 @@ const VideoDetails = () => {
 
         {/* 1. Immersive Video Player Container (optimized to fit window) */}
         <div className="w-full bg-black/40 border-y border-white/5 shadow-[0_30px_100px_rgba(0,0,0,0.95)]">
-          <div className="max-w-[1720px] mx-auto px-0 md:px-4 lg:px-6">
+          <div className="max-w-[1720px] mx-auto px-0 lg:px-4">
             <motion.div
               initial={{ scale: 0.99, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -358,72 +309,260 @@ const VideoDetails = () => {
           </div>
         </div>
 
-        {/* 2. Beautiful Centered Video Details Section */}
-        <main className="max-w-[1600px] w-full mx-auto px-4 sm:px-6 md:px-12 lg:px-16 xl:px-24 py-6 md:py-10 space-y-6">
-          <motion.div 
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 pt-4 text-left"
-          >
-            <div className="space-y-2.5">
-              <h1 className="text-2xl md:text-3xl lg:text-4xl font-extrabold tracking-tight leading-tight max-w-4xl text-white">
-                {video.title}
-              </h1>
-              <div className="flex items-center gap-4 text-xs font-black uppercase tracking-wider text-white/30 font-mono">
-                <span>{parseInt(video.views).toLocaleString()} Views</span>
-                <span className="text-orange-500">•</span>
-                <span>Published {new Date(video.publishedAt).toLocaleDateString()}</span>
+        {/* 2. Beautiful Responsive Grid Content Details Section */}
+      <main className="relative z-10 w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-10">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            {/* Left Column: Player Details, Channel, Description, Comments */}
+            <div className="lg:col-span-2 space-y-8">
+              {/* Title & Actions Row */}
+              <div className="space-y-4 pt-4 border-b border-white/5 pb-6">
+                <div className="space-y-2.5 text-left">
+                  <h1 className="text-lg sm:text-xl font-bold leading-snug text-white">
+                    {video.title}
+                  </h1>
+                  <p className="text-sm text-[#8e8e93]">
+                    {parseInt(video.views || 0).toLocaleString()} views •{' '}
+                    {video.publishedAt
+                      ? new Date(video.publishedAt).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })
+                      : 'Recently'}
+                  </p>
+                </div>
+
+                {/* Actions Row stacked vertically exactly like mockup */}
+                <div className="flex items-center justify-around py-4 border-t border-b border-white/5 text-center">
+                  {/* Like Button */}
+                  <button
+                    onClick={handleLike}
+                    className={`flex flex-col items-center gap-1.5 cursor-pointer transition-colors group ${
+                      hasLiked ? 'text-orange-500' : 'text-white/60 hover:text-orange-500'
+                    }`}
+                  >
+                    <ThumbsUp size={18} className={`group-hover:scale-110 transition-transform ${hasLiked ? 'fill-current' : ''}`} />
+                    <span className="text-[10px] font-black uppercase tracking-wider font-mono">
+                      {likesCount >= 1000 ? `${(likesCount / 1000).toFixed(0)}K` : likesCount}
+                    </span>
+                  </button>
+
+                  {/* Watch Later Button */}
+                  <button
+                    onClick={toggleWatchLater}
+                    className={`flex flex-col items-center gap-1.5 cursor-pointer transition-colors group ${
+                      isSavedWatchLater ? 'text-orange-500' : 'text-white/60 hover:text-orange-500'
+                    }`}
+                  >
+                    <Clock size={18} className="group-hover:scale-110 transition-transform" />
+                    <span className="text-[10px] font-black uppercase tracking-wider font-mono">
+                      Watch Later
+                    </span>
+                  </button>
+
+                  {/* Share Button */}
+                  <button
+                    onClick={copyShareLink}
+                    className="flex flex-col items-center gap-1.5 cursor-pointer text-white/60 hover:text-orange-500 transition-colors group"
+                  >
+                    <Share2 size={18} className="group-hover:scale-110 transition-transform" />
+                    <span className="text-[10px] font-black uppercase tracking-wider font-mono">
+                      Share
+                    </span>
+                  </button>
+
+                  {/* More Button */}
+                  <button
+                    onClick={() => setShowInfoOverlay(true)}
+                    className="flex flex-col items-center gap-1.5 cursor-pointer text-white/60 hover:text-orange-500 transition-colors group"
+                  >
+                    <Plus size={18} className="group-hover:scale-110 transition-transform" />
+                    <span className="text-[10px] font-black uppercase tracking-wider font-mono">
+                      More
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Publisher/Channel Row exactly like mockup */}
+              <div className="flex items-center justify-between py-2 text-left">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full overflow-hidden border border-white/10 bg-white/5 flex-shrink-0">
+                    <img 
+                      src={`https://api.dicebear.com/7.x/initials/svg?seed=${video.channelTitle}&backgroundColor=f97316`} 
+                      alt={video.channelTitle} 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-white text-sm tracking-tight leading-snug">
+                      {video.channelTitle}
+                    </h3>
+                    <p className="text-[10px] text-white/40 font-medium">
+                      1.2M subscribers
+                    </p>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={handleSubscribe}
+                  className={`px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                    isSubscribed 
+                      ? 'bg-white/10 text-white/80 border border-white/10 hover:bg-white/15' 
+                      : 'bg-orange-500 text-white hover:bg-orange-600 shadow-md shadow-orange-500/10 active:scale-95'
+                  }`}
+                >
+                  {isSubscribed ? 'Subscribed' : 'Subscribe'}
+                </button>
+              </div>
+
+              {/* Description Section exactly like mockup */}
+              <div className="pt-2 text-left space-y-2">
+                <h4 className="text-sm font-black text-white uppercase tracking-wider font-mono">Description</h4>
+                <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 relative overflow-hidden">
+                  <p className={`text-xs text-white/60 leading-relaxed font-medium ${
+                    isDescriptionExpanded ? '' : 'line-clamp-2'
+                  }`}>
+                    {video.description || "No description provided."}
+                  </p>
+                  <button 
+                    onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                    className="text-[10px] font-black uppercase tracking-widest text-orange-500 hover:text-white transition-colors font-mono mt-2 block cursor-pointer"
+                  >
+                    {isDescriptionExpanded ? '...less' : '...more'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Comments Section (desktop) */}
+              <div className="hidden md:block space-y-6 text-left">
+                <div className="flex items-center gap-3">
+                  <MessageSquare size={20} className="text-orange-500" />
+                  <h3 className="text-lg font-black tracking-tight text-white uppercase font-mono">
+                    Comments ({comments.length})
+                  </h3>
+                </div>
+
+                {/* Comment Input Form */}
+                <form onSubmit={handleCommentSubmit} className="flex gap-4">
+                  <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 bg-white/5 flex-shrink-0">
+                    <img 
+                      src="https://api.dicebear.com/7.x/initials/svg?seed=Alex+Smith&backgroundColor=f97316" 
+                      alt="My Avatar" 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="flex-grow flex gap-2">
+                    <input 
+                      type="text" 
+                      placeholder="Add a public comment..." 
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      className="flex-grow bg-white/5 border border-white/10 px-5 py-3 rounded-xl text-sm text-white placeholder-white/30 focus:outline-none focus:border-orange-500/40 transition-colors"
+                    />
+                    <button 
+                      type="submit"
+                      className="p-3 bg-orange-500 hover:bg-orange-600 rounded-xl text-white shadow-lg shadow-orange-500/25 active:scale-95 transition-all cursor-pointer"
+                    >
+                      <Send size={16} />
+                    </button>
+                  </div>
+                </form>
+
+                {/* Comment List */}
+                <div className="space-y-4">
+                  {comments.map((comment) => (
+                    <div key={comment.id} className="flex gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-all">
+                      <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 bg-white/5 flex-shrink-0">
+                        <img 
+                          src={comment.avatar} 
+                          alt={comment.author} 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="space-y-1.5 flex-grow">
+                        <div className="flex items-center gap-2">
+                          <span className="font-extrabold text-xs text-white">{comment.author}</span>
+                          <span className="text-[9px] text-white/30 font-mono uppercase">{comment.time}</span>
+                        </div>
+                        <p className="text-xs text-white/70 leading-relaxed font-medium">
+                          {comment.text}
+                        </p>
+                        <div className="flex items-center gap-1.5 text-[9px] font-black text-white/40 uppercase tracking-widest font-mono pt-1">
+                          <ThumbsUp size={10} className="text-white/30" />
+                          <span>{comment.likes} Likes</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
-            {/* Action Row */}
-            <div className="flex items-center gap-2.5 overflow-x-auto hide-scrollbar w-full pb-3 md:pb-0 md:w-auto md:flex-wrap whitespace-nowrap">
-              {/* Like Pill */}
-              <button
-                onClick={handleLike}
-                className={`flex items-center gap-2 px-4 py-2.5 md:px-6 md:py-3.5 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest transition-all border cursor-pointer select-none flex-shrink-0 ${
-                  hasLiked 
-                    ? 'bg-orange-500 border-orange-500/25 text-white shadow-lg shadow-orange-500/30 hover:bg-orange-600' 
-                    : 'bg-white/5 border-white/10 hover:border-orange-500/40 text-white hover:bg-white/10 hover:text-orange-500'
-                }`}
-              >
-                <ThumbsUp size={14} className={hasLiked ? 'fill-current' : 'text-white/60'} />
-                <span>{likesCount.toLocaleString()} Likes</span>
-              </button>
+            {/* Right Column: Recommended Sidebar (desktop) */}
+            <div className="hidden lg:block lg:col-span-1 space-y-6 lg:border-l lg:border-white/5 lg:pl-8 text-left">
+              <div className="flex items-center gap-3">
+                <Sparkles size={18} className="text-orange-500 animate-pulse" />
+                <h3 className="text-sm font-black uppercase tracking-widest font-mono text-white">
+                  Next to Stream
+                </h3>
+              </div>
 
-              {/* Watch Later Pill */}
-              <button
-                onClick={toggleWatchLater}
-                className={`flex items-center gap-2 px-4 py-2.5 md:px-6 md:py-3.5 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest transition-all border cursor-pointer select-none flex-shrink-0 ${
-                  isSavedWatchLater 
-                    ? 'bg-orange-500/10 border-orange-500/20 text-orange-500 font-bold' 
-                    : 'bg-white/5 border-white/10 hover:border-orange-500/40 text-white hover:bg-white/10 hover:text-orange-500'
-                }`}
-              >
-                <Clock size={14} />
-                <span>Watch Later</span>
-              </button>
+              {/* Recommended List */}
+              <div className="space-y-4">
+                {relatedVideos.map((item) => {
+                  const id = item.videoId || item.id;
+                  if (!id) return null;
 
-              {/* Share Pill */}
-              <button
-                onClick={copyShareLink}
-                className="flex items-center gap-2 px-4 py-2.5 md:px-6 md:py-3.5 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest transition-all border bg-white/5 border-white/10 hover:border-orange-500/40 text-white hover:bg-white/10 hover:text-orange-500 cursor-pointer select-none flex-shrink-0"
-              >
-                <Share2 size={14} />
-                <span>Share</span>
-              </button>
+                  return (
+                    <div 
+                      key={id}
+                      onClick={() => handleVideoSelect(item)}
+                      className="flex gap-3 group cursor-pointer p-2 rounded-2xl bg-white/[0.01] hover:bg-white/5 border border-transparent hover:border-white/5 transition-all"
+                    >
+                      {/* 16:9 Thumbnail */}
+                      <div className="relative w-32 min-w-32 aspect-video rounded-xl overflow-hidden border border-white/5 bg-white/5 flex-shrink-0">
+                        <img 
+                          src={item.thumbnail || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=300&auto=format&fit=crop'} 
+                          alt={item.title} 
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=300&auto=format&fit=crop';
+                          }}
+                        />
+                      </div>
+                      
+                      {/* Metadata */}
+                      <div className="flex flex-col justify-between py-0.5 overflow-hidden flex-grow text-left">
+                        <h4 className="text-white font-bold text-xs leading-snug line-clamp-2 group-hover:text-orange-500 transition-colors">
+                          {item.title}
+                        </h4>
+                        <div className="space-y-0.5">
+                          <p className="text-[9px] font-black text-white/40 uppercase tracking-widest truncate">
+                            {item.channelTitle}
+                          </p>
+                          {item.views && (
+                            <p className="text-[8px] font-extrabold text-orange-500/80 font-mono uppercase tracking-wider">
+                              {parseInt(item.views).toLocaleString()} Views
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
 
-              {/* More Pill */}
-              <button
-                onClick={() => setShowInfoOverlay(true)}
-                className="p-2.5 md:p-3.5 rounded-full border bg-white/5 border-white/10 hover:border-orange-500/40 text-white hover:bg-white/10 hover:text-orange-500 cursor-pointer transition-all flex-shrink-0"
-                title="More Info"
-              >
-                <Plus size={16} />
-              </button>
+                {relatedVideos.length === 0 && (
+                  <div className="text-center py-12 text-white/20 text-xs italic bg-white/[0.01] rounded-2xl border border-dashed border-white/5">
+                    No recommendations found.
+                  </div>
+                )}
+              </div>
             </div>
-          </motion.div>
+
+          </div>
         </main>
       </div>
     </div>

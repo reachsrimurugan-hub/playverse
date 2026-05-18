@@ -17,6 +17,7 @@ const HistoryPage = lazy(() => import('./pages/HistoryPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const AuthPage = lazy(() => import('./pages/AuthPage'));
+const CategoriesPage = lazy(() => import('./pages/CategoriesPage'));
 
 function App() {
   return (
@@ -24,14 +25,16 @@ function App() {
       <SidebarProvider>
         <BrowserRouter>
           <Suspense fallback={
-            <div className="min-h-screen bg-[#0a0502] flex items-center justify-center">
+            <div className="min-h-screen bg-black flex items-center justify-center">
               <Loader />
             </div>
           }>
             <Routes>
               <Route path="/" element={<CinematicDashboard />} />
               <Route path="/watch/:videoId" element={<VideoDetails />} />
+              <Route path="/search" element={<SearchResults />} />
               <Route path="/search/:searchTerm" element={<SearchResults />} />
+              <Route path="/categories" element={<CategoriesPage />} />
               <Route path="/category/:categoryName" element={<CategoryPage />} />
               <Route path="/trending" element={<TrendingPage />} />
               <Route path="/library" element={<LibraryPage />} />

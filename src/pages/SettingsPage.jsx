@@ -1,9 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CinematicNavbar from '../components/CinematicNavbar';
+import DesktopBrowseSidebar from '../components/DesktopBrowseSidebar';
 import { useLanguage, languages } from '../context/LanguageContext';
-import { motion } from 'framer-motion';
-import { Settings, Sliders, Globe, Eye, Zap, Shield } from 'lucide-react';
+import { Settings, Sliders, Eye, Zap } from 'lucide-react';
+
+const cardClass =
+  'bg-[#1a1a1a] border border-white/[0.08] rounded-2xl p-6 sm:p-8 space-y-6';
 
 const SettingsPage = () => {
   const navigate = useNavigate();
@@ -18,18 +21,6 @@ const SettingsPage = () => {
     hardwareAcceleration: true,
     dataSaver: false
   });
-  const mouseGlowRef = useRef(null);
-
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      if (mouseGlowRef.current) {
-        mouseGlowRef.current.style.left = `${e.clientX}px`;
-        mouseGlowRef.current.style.top = `${e.clientY}px`;
-      }
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
 
   // Load settings from localStorage
   useEffect(() => {
@@ -55,49 +46,59 @@ const SettingsPage = () => {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#0a0502] text-white selection:bg-orange-500/30">
-      <div className="cinematic-bg" />
-      <div className="grain" />
-      <div ref={mouseGlowRef} className="mouse-glow" />
-
+    <div className="min-h-screen bg-black text-white selection:bg-orange-500/30 pb-24 lg:pb-10">
       <CinematicNavbar onSearch={(q) => navigate(`/search/${q}`)} />
 
-      <main className="relative z-10 pt-32 pb-20 px-6 md:px-12 lg:px-16 xl:px-24 max-w-[1000px] mx-auto space-y-12">
-        {/* Header */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-3 text-orange-500">
-            <Settings size={24} className="animate-spin-slow" />
-            <span className="text-xs font-black uppercase tracking-[0.3em] font-mono">Control Panel</span>
-          </div>
-          <h1 className="text-4xl md:text-6xl font-black tracking-tighter">System Settings</h1>
-          <div className="h-1.5 w-24 bg-orange-500 rounded-full" />
-        </div>
+      <div className="flex w-full max-w-[1920px] mx-auto pt-[4.5rem] lg:pt-20">
+        <DesktopBrowseSidebar />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-          {/* Navigation Sidebar inside page */}
-          <div className="md:col-span-1 space-y-3">
-            <div className="glass-premium p-6 rounded-3xl border-white/5 space-y-4">
-              <h3 className="text-xs font-black text-white/30 uppercase tracking-[0.2em] font-mono mb-4">Categories</h3>
-              
-              <a href="#playback" className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 text-orange-500 font-bold border border-white/10 text-sm transition-all">
-                <Sliders size={16} />
-                Playback Settings
-              </a>
-              <a href="#appearance" className="flex items-center gap-3 p-3 rounded-2xl hover:bg-white/5 text-white/60 hover:text-white border border-transparent hover:border-white/5 text-sm transition-all">
-                <Eye size={16} />
-                Atmosphere & UI
-              </a>
-              <a href="#performance" className="flex items-center gap-3 p-3 rounded-2xl hover:bg-white/5 text-white/60 hover:text-white border border-transparent hover:border-white/5 text-sm transition-all">
-                <Zap size={16} />
-                Performance & Hardware
-              </a>
+        <main className="flex-1 min-w-0 px-4 sm:px-6 lg:px-10 py-6 lg:py-8 space-y-10">
+          <div className="space-y-2">
+            <div className="flex items-center gap-3 text-[#f97316]">
+              <Settings size={24} className="animate-[spin_6s_linear_infinite]" />
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8e8e93]">
+                Control panel
+              </span>
             </div>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-white">
+              System settings
+            </h1>
+            <div className="h-1 w-20 bg-[#f97316] rounded-full" />
           </div>
 
-          {/* Setting Options panels */}
-          <div className="md:col-span-2 space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
+            <div className="lg:col-span-4 lg:sticky lg:top-24 space-y-3">
+              <p className="text-[11px] font-semibold text-[#8e8e93] uppercase tracking-wider px-1">
+                On this page
+              </p>
+              <div className={`${cardClass} !space-y-2 !p-4`}>
+                <a
+                  href="#playback"
+                  className="flex items-center gap-3 p-3 rounded-xl bg-[#f97316]/15 text-[#f97316] font-medium border border-white/[0.06] text-sm transition-colors"
+                >
+                  <Sliders size={16} />
+                  Playback
+                </a>
+                <a
+                  href="#appearance"
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/[0.04] text-[#8e8e93] hover:text-white border border-transparent text-sm transition-colors"
+                >
+                  <Eye size={16} />
+                  Atmosphere &amp; UI
+                </a>
+                <a
+                  href="#performance"
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/[0.04] text-[#8e8e93] hover:text-white border border-transparent text-sm transition-colors"
+                >
+                  <Zap size={16} />
+                  Performance
+                </a>
+              </div>
+            </div>
+
+            <div className="lg:col-span-8 space-y-8">
             {/* Playback Settings */}
-            <section id="playback" className="glass-premium p-8 rounded-[2.5rem] border-white/5 space-y-6">
+            <section id="playback" className={cardClass}>
               <div className="flex items-center gap-3 text-orange-500 mb-2">
                 <Sliders size={20} />
                 <h3 className="font-bold text-lg text-white">Playback Configuration</h3>
@@ -144,7 +145,7 @@ const SettingsPage = () => {
                   className="bg-white/5 border border-white/10 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider text-white outline-none focus:border-orange-500 cursor-pointer"
                 >
                   {['Auto', '4K', '1080p', '720p', '480p'].map(q => (
-                    <option key={q} value={q} className="bg-[#0a0502] text-white">{q}</option>
+                    <option key={q} value={q} className="bg-[#1a1a1a] text-white">{q}</option>
                   ))}
                 </select>
               </div>
@@ -164,14 +165,14 @@ const SettingsPage = () => {
                   className="bg-white/5 border border-white/10 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider text-white outline-none focus:border-orange-500 cursor-pointer"
                 >
                   {languages.map(l => (
-                    <option key={l.code} value={l.code} className="bg-[#0a0502] text-white">{l.name}</option>
+                    <option key={l.code} value={l.code} className="bg-[#1a1a1a] text-white">{l.name}</option>
                   ))}
                 </select>
               </div>
             </section>
 
             {/* Atmosphere & UI Settings */}
-            <section id="appearance" className="glass-premium p-8 rounded-[2.5rem] border-white/5 space-y-6">
+            <section id="appearance" className={cardClass}>
               <div className="flex items-center gap-3 text-orange-500 mb-2">
                 <Eye size={20} />
                 <h3 className="font-bold text-lg text-white">Atmosphere & Interface</h3>
@@ -208,7 +209,7 @@ const SettingsPage = () => {
             </section>
 
             {/* Performance Settings */}
-            <section id="performance" className="glass-premium p-8 rounded-[2.5rem] border-white/5 space-y-6">
+            <section id="performance" className={cardClass}>
               <div className="flex items-center gap-3 text-orange-500 mb-2">
                 <Zap size={20} />
                 <h3 className="font-bold text-lg text-white">Performance Optimizations</h3>
@@ -243,19 +244,10 @@ const SettingsPage = () => {
                 </button>
               </div>
             </section>
+            </div>
           </div>
-        </div>
-      </main>
-
-      <style jsx>{`
-        .animate-spin-slow {
-          animation: spin 6s linear infinite;
-        }
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
+        </main>
+      </div>
     </div>
   );
 };

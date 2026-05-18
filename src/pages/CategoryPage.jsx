@@ -1,42 +1,46 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, useNavigate, NavLink } from 'react-router-dom';
 import CinematicNavbar from '../components/CinematicNavbar';
-import CinematicMovieGrid from '../components/CinematicMovieGrid';
-import { motion } from 'framer-motion';
-import { searchVideos } from '../services/cinematicApi';
+import DesktopBrowseSidebar from '../components/DesktopBrowseSidebar';
+import VideoGridCard from '../components/VideoGridCard';
+import { searchVideos, getPopularMovies } from '../services/cinematicApi';
+
+const FILTER_PILLS = [
+  { label: 'All', to: '/category/All' },
+  { label: 'TV Shows', to: '/category/TV Series' },
+  { label: 'Movies', to: '/category/Movies' },
+  { label: 'Anime', to: '/category/Anime' },
+];
 
 const CategoryPage = () => {
   const { categoryName } = useParams();
   const navigate = useNavigate();
   const [videos, setVideos] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const mouseGlowRef = useRef(null);
 
-  useEffect(() => {
-    const isHoverDevice = window.matchMedia('(hover: hover)').matches;
-    if (!isHoverDevice) return;
-
-    const handleMouseMove = (e) => {
-      if (mouseGlowRef.current) {
-        mouseGlowRef.current.style.left = `${e.clientX}px`;
-        mouseGlowRef.current.style.top = `${e.clientY}px`;
-      }
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
+  const decoded = categoryName ? decodeURIComponent(categoryName) : '';
 
   const fetchCategoryVideos = useCallback(async () => {
     setIsLoading(true);
     try {
-      const results = await searchVideos(categoryName);
+      let results = [];
+      const key = decoded || '';
+      if (key === 'All' || !key) {
+        results = await getPopularMovies();
+      } else if (key === 'Top Rated') {
+        results = await searchVideos('top rated movies');
+      } else if (key === 'New Releases') {
+        results = await searchVideos('new movie trailers');
+      } else {
+        results = await searchVideos(key);
+      }
       setVideos(results || []);
     } catch (error) {
-      console.error(`Failed to fetch ${categoryName} videos`, error);
+      console.error(`Failed to fetch ${decoded} videos`, error);
     } finally {
       setIsLoading(false);
     }
-  }, [categoryName]);
+  }, [decoded]);
 
   useEffect(() => {
     fetchCategoryVideos();
@@ -44,58 +48,66 @@ const CategoryPage = () => {
   }, [fetchCategoryVideos]);
 
   const handleVideoSelect = (video) => {
-    const id = video.videoId || video.id;
-    navigate(`/watch/${id}`);
+    navigate(`/watch/${video.videoId || video.id}`);
   };
 
-  const handleSearch = (q) => {
-    navigate(`/search/${q}`);
-  };
-
-  const handleTagSelect = (tag) => {
-    if (tag === 'Home') navigate('/');
-    else navigate(`/category/${tag}`);
-  };
+  const title = decoded === 'All' || !decoded ? 'All Videos' : decoded;
 
   return (
-    <div className="relative min-h-screen bg-[#0a0502] text-white selection:bg-orange-500/30">
-      <div className="cinematic-bg" />
-      <div className="grain" />
-      <div ref={mouseGlowRef} className="mouse-glow" />
-
-      <CinematicNavbar 
-        onSearch={handleSearch} 
-        onTagSelect={handleTagSelect}
+    <div className="min-h-screen bg-black text-white pb-24 lg:pb-8">
+      <CinematicNavbar
+        onSearch={(q) => navigate(`/search/${q}`)}
         searchResults={videos.slice(0, 5)}
         onVideoSelect={handleVideoSelect}
-        activeTag={categoryName}
       />
 
-      <main className="max-w-[1800px] mx-auto pt-32 pb-20 px-6 md:px-12 lg:px-16 xl:px-24">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-        >
-          <div className="mb-12">
-            <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-white mb-4">
-              {categoryName}
-            </h1>
-            <div className="h-1 w-24 bg-orange-500 rounded-full" />
+      <div className="flex w-full max-w-[1920px] mx-auto pt-[4.5rem] lg:pt-20">
+        <DesktopBrowseSidebar />
+
+        <main className="flex-1 min-w-0 px-4 sm:px-6 lg:px-10 py-6 lg:py-8">
+          <h1 className="text-2xl lg:text-3xl font-bold text-white mb-4">{title}</h1>
+
+          <div className="flex flex-wrap gap-2 mb-8">
+            {FILTER_PILLS.map((pill) => (
+              <NavLink
+                key={pill.to}
+                to={pill.to}
+                className={({ isActive }) =>
+                  `px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'bg-[#f97316] text-white'
+                      : 'bg-[#1a1a1a] text-[#8e8e93] hover:text-white border border-white/[0.06]'
+                  }`
+                }
+              >
+                {pill.label}
+              </NavLink>
+            ))}
           </div>
 
-          <CinematicMovieGrid 
-            movies={videos} 
-            title={`Browse ${categoryName}`} 
-            loading={isLoading} 
-            onVideoSelect={handleVideoSelect}
-          />
-        </motion.div>
-      </main>
+          {isLoading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-6">
+              {Array.from({ length: 10 }).map((_, i) => (
+                <div key={i} className="animate-pulse space-y-2">
+                  <div className="aspect-video bg-[#1a1a1a] rounded-xl" />
+                  <div className="h-3 bg-[#1a1a1a] rounded w-4/5" />
+                  <div className="h-2 bg-[#1a1a1a] rounded w-1/2" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-6">
+              {videos.map((video, idx) => (
+                <VideoGridCard key={video.videoId || video.id || idx} video={video} onClick={handleVideoSelect} />
+              ))}
+            </div>
+          )}
 
-      {/* Decorative Atmosphere */}
-      <div className="orb w-[600px] h-[600px] bg-orange-500/5 top-[-10%] right-[-5%]" />
-      <div className="orb w-[400px] h-[400px] bg-orange-900/10 bottom-[-5%] left-[-5%]" />
+          {!isLoading && videos.length === 0 && (
+            <p className="text-center py-20 text-[#8e8e93]">No videos found for this category.</p>
+          )}
+        </main>
+      </div>
     </div>
   );
 };

@@ -1,104 +1,78 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Download, Plus, Info, Share2, ThumbsUp } from 'lucide-react';
-import CinematicVideoPlayer from './CinematicVideoPlayer';
+import React from 'react';
+import { Play, Plus } from 'lucide-react';
 
 const CinematicHero = ({ video, onPlay }) => {
-  const [isHovered, setIsHovered] = useState(false);
-
   if (!video) return null;
 
   const title = video.title?.split('|')[0].split('(')[0] || 'Untitled';
   const description = video.description || '';
 
   return (
-    <motion.section 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="relative w-full mb-12"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <div className="relative w-full aspect-[21/9] min-h-[400px] max-h-[600px] rounded-[40px] overflow-hidden group shadow-2xl">
-        <motion.div 
-          className="absolute inset-0"
-        >
-          <img 
-            src={video.thumbnail || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop'} 
-            alt={title} 
-            className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop';
-            }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0502] via-transparent to-transparent" />
-          
-          <div className="absolute inset-0 flex flex-col justify-end p-8 md:p-16 gap-4 md:gap-6">
-            <motion.div 
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="flex gap-3"
-            >
-              <span className="glass-orange px-4 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase text-orange-500 border-orange-500/20">
-                Trending #1
-              </span>
-              <span className="bg-white/10 backdrop-blur-md px-4 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase text-white/60">
-                {video.channelTitle}
-              </span>
-            </motion.div>
+    <section className="relative w-full mb-6">
+      <div className="relative w-full aspect-[16/11] md:aspect-[21/9] min-h-[220px] max-h-[420px] lg:max-h-[520px] xl:max-h-[600px] rounded-2xl md:rounded-3xl overflow-hidden bg-[#1a1a1a]">
+        <img
+          src={
+            video.thumbnail ||
+            'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop'
+          }
+          alt={title}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src =
+              'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop';
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
 
-            <div className="max-w-3xl space-y-4">
-              <motion.h1 
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="text-4xl md:text-6xl font-black tracking-tighter text-white leading-[1.1] text-glow"
-              >
-                {title}
-              </motion.h1>
-              
-              <motion.p 
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.4 }}
-                className="text-sm md:text-base text-white/60 leading-relaxed max-w-xl line-clamp-3 font-medium"
-              >
-                {description}
-              </motion.p>
-            </div>
-
-            <motion.div 
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.5 }}
-              className="flex items-center gap-4 mt-4"
-            >
-              <button 
-                onClick={() => onPlay && onPlay(video)}
-                className="bg-white text-black px-8 md:px-10 py-4 rounded-2xl font-bold flex items-center gap-3 hover:bg-orange-500 hover:text-white transition-all duration-300 shadow-2xl shadow-white/5 active:scale-95"
-              >
-                <Play size={20} fill="currentColor" />
-                Watch Trailer
-              </button>
-              
-              <button className="glass px-6 py-4 rounded-2xl font-bold flex items-center gap-3 hover:bg-white/10 transition-all border-white/20">
-                <Plus size={20} className="text-white/70" />
-                My List
-              </button>
-            </motion.div>
+        <div className="absolute inset-0 flex flex-col justify-end p-4 sm:p-6 gap-3">
+          <div className="flex flex-wrap gap-2">
+            <span className="bg-[#f97316] text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wide">
+              Trending #1
+            </span>
+            <span className="bg-black/50 backdrop-blur-sm text-white/90 text-[10px] font-semibold px-2.5 py-1 rounded-full uppercase">
+              {video.channelTitle}
+            </span>
           </div>
-        </motion.div>
-      </div>
 
-      <div className="absolute -top-20 -left-20 w-96 h-96 bg-orange-500/10 blur-[120px] rounded-full pointer-events-none -z-10" />
-      <div className="absolute -bottom-20 -right-20 w-96 h-96 bg-orange-900/20 blur-[120px] rounded-full pointer-events-none -z-10" />
-    </motion.section>
+          <h1 className="text-xl sm:text-2xl md:text-4xl font-bold text-white leading-tight line-clamp-2">
+            {title}
+          </h1>
+
+          {description && (
+            <p className="text-xs sm:text-sm text-white/70 line-clamp-2 leading-relaxed">
+              {description}
+            </p>
+          )}
+
+          <div className="flex flex-col sm:flex-row gap-3 mt-1">
+            <button
+              type="button"
+              onClick={() => onPlay?.(video)}
+              className="flex flex-1 items-center justify-center gap-2 bg-[#f97316] hover:bg-orange-600 text-white font-semibold py-3 rounded-xl transition-colors text-sm"
+            >
+              <Play size={18} fill="currentColor" />
+              Watch Now
+            </button>
+            <button
+              type="button"
+              className="flex items-center justify-center gap-2 border border-white/30 text-white font-semibold px-6 py-3 rounded-xl hover:bg-white/10 transition-colors text-sm sm:flex-initial"
+            >
+              <Plus size={18} />
+              My List
+            </button>
+          </div>
+
+          <div className="flex justify-center gap-2 pt-2 pb-1">
+            <span className="w-5 h-1.5 bg-[#f97316] rounded-full" />
+            <span className="w-1.5 h-1.5 bg-white/30 rounded-full" />
+            <span className="w-1.5 h-1.5 bg-white/30 rounded-full" />
+            <span className="w-1.5 h-1.5 bg-white/30 rounded-full" />
+          </div>
+        </div>
+      </div>
+    </section>
   );
 };
 
-
 export default React.memo(CinematicHero);
-

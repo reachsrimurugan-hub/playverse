@@ -1,200 +1,170 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CinematicNavbar from '../components/CinematicNavbar';
 import { motion } from 'framer-motion';
-import { User, ShieldCheck, Mail, Calendar, Sparkles, Award, Clock, Play } from 'lucide-react';
+import { 
+  User, CreditCard, Receipt, History, Library, Settings, 
+  LogOut, ChevronRight, Volume2, Shield, Bell, Globe, Eye, Pencil 
+} from 'lucide-react';
 
 const ProfilePage = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState({
-    username: 'Alex Smith',
-    email: 'alex.smith@playverse.tv',
-    tier: 'Cinema Elite',
+    username: 'sri',
+    email: 'reachsrimurugan@gmail.com',
+    tier: 'PREMIUM',
     avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop',
-    joined: 'May 2026',
-    watchTime: '142 Hours',
-    videosWatched: '520 Videos',
-    playlistsCount: '6'
+    joined: 'May 2026'
   });
-  const [editMode, setEditMode] = useState(false);
-  const [editedName, setEditedName] = useState(profile.username);
-  const [editedEmail, setEditedEmail] = useState(profile.email);
-  const mouseGlowRef = useRef(null);
+  
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [activeMenu, setActiveMenu] = useState('Profile');
 
   useEffect(() => {
-    const handleMouseMove = (e) => {
-      if (mouseGlowRef.current) {
-        mouseGlowRef.current.style.left = `${e.clientX}px`;
-        mouseGlowRef.current.style.top = `${e.clientY}px`;
-      }
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
-
-  // Load profile from localStorage if exists
-  useEffect(() => {
+    const loggedIn = localStorage.getItem('nextube_logged_in') === 'true';
+    setIsLoggedIn(loggedIn);
     const saved = localStorage.getItem('nextube_profile');
     if (saved) {
-      const parsed = JSON.parse(saved);
-      setProfile(prev => ({ ...prev, ...parsed }));
-      setEditedName(parsed.username || profile.username);
-      setEditedEmail(parsed.email || profile.email);
+      setProfile(JSON.parse(saved));
     }
   }, []);
 
-  const saveProfile = (e) => {
-    e.preventDefault();
-    const updated = { ...profile, username: editedName, email: editedEmail };
-    setProfile(updated);
-    localStorage.setItem('nextube_profile', JSON.stringify(updated));
-    setEditMode(false);
+  const handleLogout = () => {
+    localStorage.removeItem('nextube_logged_in');
+    localStorage.removeItem('nextube_profile');
+    setIsLoggedIn(false);
+    navigate('/');
   };
 
-  return (
-    <div className="relative min-h-screen bg-[#0a0502] text-white selection:bg-orange-500/30">
-      <div className="cinematic-bg" />
-      <div className="grain" />
-      <div ref={mouseGlowRef} className="mouse-glow" />
+  const menuItems = [
+    { label: 'Profile', icon: <User size={16} /> },
+    { label: 'Subscription', icon: <CreditCard size={16} /> },
+    { label: 'Billing', icon: <Receipt size={16} /> },
+    { label: 'Watch History', icon: <History size={16} />, path: '/history' },
+    { label: 'My List', icon: <Library size={16} />, path: '/library' },
+    { label: 'Settings', icon: <Settings size={16} />, path: '/settings' }
+  ];
 
+  return (
+    <div className="min-h-screen bg-black text-white pb-24 lg:pb-10">
       <CinematicNavbar onSearch={(q) => navigate(`/search/${q}`)} />
 
-      <main className="relative z-10 pt-32 pb-20 px-6 md:px-12 lg:px-16 xl:px-24 max-w-[1200px] mx-auto space-y-12">
-        {/* Profile Card Widescreen */}
-        <div className="relative glass-premium p-8 md:p-12 rounded-[3.5rem] border-white/5 shadow-2xl overflow-hidden">
-          {/* Decorative Back Orbs */}
-          <div className="absolute -top-12 -right-12 w-64 h-64 bg-orange-500/10 blur-[80px] rounded-full pointer-events-none" />
-          <div className="absolute -bottom-12 -left-12 w-48 h-48 bg-orange-800/10 blur-[80px] rounded-full pointer-events-none" />
-
-          <div className="flex flex-col lg:flex-row items-center gap-10">
-            {/* Avatar block */}
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-tr from-orange-500 to-red-600 rounded-[2.5rem] blur opacity-30 group-hover:opacity-60 transition-opacity" />
-              <div className="relative w-40 h-40 rounded-[2.5rem] overflow-hidden border border-white/10">
-                <img src={profile.avatar} alt="Avatar" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
-              </div>
-              <div className="absolute bottom-[-10px] left-1/2 -translate-x-1/2 bg-orange-500 text-white font-mono text-[9px] font-black uppercase px-4 py-1.5 rounded-full tracking-[0.2em] shadow-lg shadow-orange-500/30">
-                Premium
-              </div>
-            </div>
-
-            {/* User Info details */}
-            <div className="flex-1 text-center lg:text-left space-y-4">
-              <div className="flex flex-col sm:flex-row items-center gap-3 justify-center lg:justify-start">
-                <h2 className="text-3xl md:text-4xl font-black tracking-tight">{profile.username}</h2>
-                <div className="flex items-center gap-1.5 glass-orange px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-orange-500 border-orange-500/20">
-                  <ShieldCheck size={12} />
-                  {profile.tier}
-                </div>
-              </div>
-
-              <div className="flex flex-wrap justify-center lg:justify-start items-center gap-x-6 gap-y-2 text-xs font-bold text-white/50 uppercase tracking-wider">
-                <div className="flex items-center gap-2">
-                  <Mail size={14} className="text-orange-500" />
-                  <span>{profile.email}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Calendar size={14} className="text-orange-500" />
-                  <span>Member Since {profile.joined}</span>
-                </div>
-              </div>
-
-              <div className="pt-2">
-                {editMode ? (
-                  <form onSubmit={saveProfile} className="space-y-4 max-w-md mx-auto lg:mx-0">
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <input 
-                        type="text" 
-                        value={editedName} 
-                        onChange={(e) => setEditedName(e.target.value)} 
-                        className="bg-white/5 border border-white/10 px-4 py-2.5 rounded-xl text-sm outline-none focus:border-orange-500 transition-all font-semibold"
-                        placeholder="Display Name"
-                        required
-                      />
-                      <input 
-                        type="email" 
-                        value={editedEmail} 
-                        onChange={(e) => setEditedEmail(e.target.value)} 
-                        className="bg-white/5 border border-white/10 px-4 py-2.5 rounded-xl text-sm outline-none focus:border-orange-500 transition-all font-semibold"
-                        placeholder="Email Address"
-                        required
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <button type="submit" className="bg-orange-500 text-white font-bold px-6 py-2.5 rounded-xl text-[10px] uppercase tracking-wider shadow-lg shadow-orange-500/20">
-                        Save
-                      </button>
-                      <button type="button" onClick={() => setEditMode(false)} className="bg-white/5 border border-white/10 text-white/60 font-bold px-6 py-2.5 rounded-xl text-[10px] uppercase tracking-wider hover:text-white">
-                        Cancel
-                      </button>
-                    </div>
-                  </form>
-                ) : (
-                  <button 
-                    onClick={() => setEditMode(true)}
-                    className="glass-button px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider"
+      <main className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-10 pt-[4.5rem] lg:pt-24 pb-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
+          <div className="lg:col-span-4 lg:sticky lg:top-24 space-y-6">
+            <p className="text-[11px] font-semibold text-[#8e8e93] uppercase tracking-wider px-1">Account</p>
+            <div className="bg-[#1a1a1a] border border-white/[0.08] rounded-2xl p-2 space-y-0.5">
+                {menuItems.map((item) => (
+                  <button
+                    key={item.label}
+                    onClick={() => {
+                      setActiveMenu(item.label);
+                      if (item.path) navigate(item.path);
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-left ${
+                      activeMenu === item.label
+                        ? 'bg-[#f97316]/15 text-[#f97316]'
+                        : 'text-[#8e8e93] hover:text-white hover:bg-white/[0.04]'
+                    }`}
                   >
-                    Edit Profile Details
+                    {item.icon}
+                    <span>{item.label}</span>
                   </button>
-                )}
+                ))}
+            </div>
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 text-sm font-medium"
+            >
+              <LogOut size={18} />
+              Sign Out
+            </button>
+          </div>
+
+          <div className="lg:col-span-8 space-y-8 text-left">
+            <div>
+              <h1 className="text-3xl font-black tracking-tight text-white mb-6">Profile</h1>
+            </div>
+
+            {/* Profile Detail Card exactly like mockup */}
+            <div className="bg-[#1a1a1a] border border-white/[0.08] rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+              
+              <div className="flex items-center gap-5 w-full sm:w-auto">
+                {/* Circular Profile Avatar */}
+                <div className="relative group flex-shrink-0">
+                  <div className="absolute inset-0 bg-gradient-to-tr from-orange-500 to-red-500 rounded-full blur-md opacity-20" />
+                  <div className="w-20 h-20 rounded-full overflow-hidden border border-white/10 relative z-10">
+                    <img 
+                      src={profile.avatar} 
+                      alt="Profile Avatar" 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+
+                {/* Name / Email / Tier Info Row */}
+                <div className="space-y-1.5 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-black text-white truncate">{profile.username}</h2>
+                    
+                    {/* Orange status label + PREMIUM badge */}
+                    <span className="bg-[#f97316] text-white text-[10px] font-bold tracking-wide uppercase px-2 py-0.5 rounded">
+                      {profile.tier}
+                    </span>
+                  </div>
+                  <p className="text-xs font-medium text-white/40 truncate">{profile.email}</p>
+                  <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest font-mono">
+                    Member since {profile.joined}
+                  </p>
+                </div>
+              </div>
+
+              {/* Edit button */}
+              <button className="flex-shrink-0 w-full sm:w-auto px-5 py-3 rounded-full border border-white/10 hover:border-white/20 text-xs font-black uppercase tracking-wider text-white/60 hover:text-white transition-all cursor-pointer flex items-center justify-center gap-2">
+                <Pencil size={12} />
+                Edit Profile
+              </button>
+            </div>
+
+            {/* Preferences block exactly like mockup */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-black tracking-tight text-white uppercase tracking-wider font-mono">Preferences</h3>
+              <div className="bg-[#1a1a1a] border border-white/[0.08] rounded-2xl overflow-hidden divide-y divide-white/[0.06]">
+                {[
+                  { label: 'Playback Settings', icon: <Volume2 size={16} className="text-orange-500" /> },
+                  { label: 'Parental Controls', icon: <Shield size={16} className="text-orange-500" /> },
+                  { label: 'Notifications', icon: <Bell size={16} className="text-orange-500" /> },
+                  { label: 'Language', icon: <Globe size={16} className="text-orange-500" />, detail: 'English' },
+                  { label: 'App Appearance', icon: <Eye size={16} className="text-orange-500" />, detail: 'Dark' }
+                ].map((pref) => (
+                  <div 
+                    key={pref.label} 
+                    className="flex items-center justify-between p-5 hover:bg-white/[0.02] transition-colors cursor-pointer group"
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-9 h-9 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-center">
+                        {pref.icon}
+                      </div>
+                      <span className="text-xs font-bold text-white/80 group-hover:text-white transition-colors">
+                        {pref.label}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-white/30 group-hover:text-white transition-colors">
+                      {pref.detail && (
+                        <span className="text-[10px] font-black uppercase tracking-widest text-white/40 font-mono">
+                          {pref.detail}
+                        </span>
+                      )}
+                      <ChevronRight size={14} />
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* User Statistics Dashboard */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Watch Time stat */}
-          <div className="glass-premium p-8 rounded-[2.5rem] border-white/5 relative group overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/5 blur-[30px] rounded-full pointer-events-none" />
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] font-mono">Engagement</span>
-              <Clock className="text-orange-500" size={20} />
-            </div>
-            <p className="text-xs text-white/50 font-bold uppercase tracking-wider mb-1">Total Watch Time</p>
-            <h3 className="text-3xl font-black text-white tracking-tight">{profile.watchTime}</h3>
           </div>
 
-          {/* Videos Watched stat */}
-          <div className="glass-premium p-8 rounded-[2.5rem] border-white/5 relative group overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-red-500/5 blur-[30px] rounded-full pointer-events-none" />
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] font-mono">Activity</span>
-              <Play className="text-red-500" size={20} />
-            </div>
-            <p className="text-xs text-white/50 font-bold uppercase tracking-wider mb-1">Streams Viewed</p>
-            <h3 className="text-3xl font-black text-white tracking-tight">{profile.videosWatched}</h3>
-          </div>
-
-          {/* Saved Playlists stat */}
-          <div className="glass-premium p-8 rounded-[2.5rem] border-white/5 relative group overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 blur-[30px] rounded-full pointer-events-none" />
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] font-mono">Collections</span>
-              <Award className="text-amber-500" size={20} />
-            </div>
-            <p className="text-xs text-white/50 font-bold uppercase tracking-wider mb-1">Active Playlists</p>
-            <h3 className="text-3xl font-black text-white tracking-tight">{profile.playlistsCount}</h3>
-          </div>
-        </div>
-
-        {/* Premium Level Showcase */}
-        <div className="glass-premium p-8 rounded-[2.5rem] border-white/5 flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-red-500/5 pointer-events-none" />
-          <div className="space-y-3 text-center md:text-left">
-            <div className="flex items-center gap-2 text-orange-500 justify-center md:justify-start">
-              <Sparkles size={20} className="animate-pulse" />
-              <span className="text-[10px] font-black uppercase tracking-wider font-mono">PlayVerse Member Club</span>
-            </div>
-            <h3 className="text-xl font-bold">You are in the premium tier, alex!</h3>
-            <p className="text-xs text-white/40 max-w-lg leading-relaxed">
-              Enjoy ad-free cinema-grade streaming, early access to new video trailers, and high-fidelity HDR quality settings across all devices.
-            </p>
-          </div>
-          <div className="w-fit text-center border border-white/10 px-8 py-5 rounded-3xl bg-white/5 backdrop-blur-xl">
-            <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-1">Status</p>
-            <span className="text-sm font-black text-orange-500 uppercase tracking-widest">Active Partner</span>
-          </div>
         </div>
       </main>
     </div>

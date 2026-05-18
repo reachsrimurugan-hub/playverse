@@ -1,16 +1,23 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, NavLink } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Bell, ChevronDown, Search, Mic, Home, Film, Tv, 
-  Sparkles, Plus, Play, User, Settings, History, 
-  Library, LogOut, LogIn, Menu, X, ShieldAlert 
+  Bell, ChevronDown, Search, Home, Plus, Play, User, Settings, History, 
+  Library, LogOut, LogIn, Menu, X,
+  ChevronRight, Pencil, HelpCircle, Sparkles
 } from 'lucide-react';
 import debounce from 'lodash.debounce';
 
-const CinematicNavbar = ({ onSearch, onTagSelect, searchResults = [], onVideoSelect, activeTag = 'Home' }) => {
+const NAV_LINKS = [
+  { label: 'Home', to: '/' },
+  { label: 'TV Shows', to: '/category/TV Series' },
+  { label: 'Movies', to: '/category/Movies' },
+  { label: 'Anime', to: '/category/Anime' },
+  { label: 'Trending', to: '/trending' },
+];
+
+const CinematicNavbar = ({ onSearch, searchResults = [], onVideoSelect }) => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState(activeTag);
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showResults, setShowResults] = useState(false);
@@ -23,11 +30,6 @@ const CinematicNavbar = ({ onSearch, onTagSelect, searchResults = [], onVideoSel
   const profileRef = useRef(null);
 
   useEffect(() => {
-    setActiveTab(activeTag);
-  }, [activeTag]);
-
-  // Check login state
-  useEffect(() => {
     const loggedIn = localStorage.getItem('nextube_logged_in') === 'true';
     setIsLoggedIn(loggedIn);
     if (loggedIn) {
@@ -38,13 +40,12 @@ const CinematicNavbar = ({ onSearch, onTagSelect, searchResults = [], onVideoSel
     }
   }, []);
 
-  const tabs = [
-    { name: 'Home', icon: <Home size={16} />, path: '/' },
-    { name: 'TV Series', icon: <Tv size={16} />, path: '/category/TV Series' },
-    { name: 'Movies', icon: <Film size={16} />, path: '/category/Movies' },
-    { name: 'Trending', icon: <Sparkles size={16} />, path: '/trending' },
-    { name: 'Anime', icon: <Plus size={16} />, path: '/category/Anime' }
-  ];
+  const navLinkClass = ({ isActive }) =>
+    `text-sm font-medium transition-colors border-b-2 pb-1 -mb-px whitespace-nowrap ${
+      isActive
+        ? 'text-white border-[#f97316]'
+        : 'text-[#8e8e93] border-transparent hover:text-white'
+    }`;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -86,16 +87,6 @@ const CinematicNavbar = ({ onSearch, onTagSelect, searchResults = [], onVideoSel
     }
   };
 
-  const handleTagClick = (tab) => {
-    setActiveTab(tab.name);
-    if (onTagSelect) {
-      onTagSelect(tab.name);
-    } else {
-      navigate(tab.path);
-    }
-    setShowMobileDrawer(false);
-  };
-
   const handleLogout = () => {
     localStorage.removeItem('nextube_logged_in');
     localStorage.removeItem('nextube_profile');
@@ -107,8 +98,10 @@ const CinematicNavbar = ({ onSearch, onTagSelect, searchResults = [], onVideoSel
 
   return (
     <>
-      <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 px-6 md:px-12 lg:px-16 xl:px-24 py-4 md:py-6 ${
-        isScrolled ? 'bg-[#0a0502]/85 backdrop-blur-3xl border-b border-white/10 py-3 md:py-4 shadow-2xl shadow-black/25' : 'bg-transparent'
+      <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 px-4 md:px-12 lg:px-16 xl:px-24 py-3 md:py-6 ${
+        isScrolled || showMobileDrawer
+          ? 'bg-black/95 backdrop-blur-md border-b border-white/[0.06]'
+          : 'bg-black md:bg-transparent'
       }`}>
         <div className="max-w-[1800px] mx-auto">
           <AnimatePresence mode="wait">
@@ -166,60 +159,80 @@ const CinematicNavbar = ({ onSearch, onTagSelect, searchResults = [], onVideoSel
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="flex items-center justify-between gap-8"
+                className="flex items-center gap-3 lg:gap-5 w-full min-h-[44px]"
               >
-                {/* Left branding - ONLY logo on the left */}
-                <div className="flex items-center gap-6">
-                  <Link to="/" className="flex items-center gap-3 cursor-pointer group">
-                    <div className="w-10 h-10 bg-orange-500 rounded-2xl flex items-center justify-center font-black text-white text-sm shadow-lg shadow-orange-500/20 group-hover:scale-110 transition-transform flex-shrink-0">
+                <div className="flex items-center gap-3 shrink-0">
+                  <Link to="/" className="flex items-center gap-2.5 cursor-pointer">
+                    <div className="w-9 h-9 bg-[#f97316] rounded-full flex items-center justify-center font-bold text-white text-xs flex-shrink-0">
                       PV
                     </div>
-                    <span className="text-2xl font-black tracking-tighter text-glow text-white group-hover:text-orange-500 transition-colors">PlayVerse</span>
+                    <span className="text-lg font-bold text-white hidden sm:inline">PlayVerse</span>
                   </Link>
                 </div>
 
-                {/* Center search bar for Desktop */}
-                <div className="hidden lg:flex flex-1 max-w-2xl relative">
-                  <div className="w-full bg-white/5 backdrop-blur-xl border border-white/10 px-6 py-3.5 rounded-2xl flex items-center gap-4 focus-within:border-orange-500/40 focus-within:shadow-[0_0_25px_rgba(249,115,22,0.15)] transition-all group">
-                    <Search size={20} className="text-white/30 group-focus-within:text-orange-500 transition-colors" />
-                    <input 
-                      type="text" 
+                <nav className="hidden lg:flex items-center gap-6 xl:gap-8 shrink-0 overflow-x-auto hide-scrollbar max-w-[min(42vw,28rem)] border-b border-transparent">
+                  {NAV_LINKS.map(({ label, to }) => (
+                    <NavLink
+                      key={to}
+                      to={to}
+                      end={to === '/'}
+                      className={navLinkClass}
+                    >
+                      {label}
+                    </NavLink>
+                  ))}
+                </nav>
+
+                {/* Desktop search — icon on right */}
+                <div className="hidden lg:flex flex-1 min-w-0 justify-center xl:justify-start max-w-xl xl:max-w-2xl relative">
+                  <div className="w-full bg-[#1a1a1a] border border-white/[0.08] rounded-full pl-5 pr-3 py-2.5 flex items-center gap-2 focus-within:border-[#f97316]/50 transition-colors">
+                    <input
+                      type="text"
                       value={searchQuery}
                       onChange={handleSearchChange}
                       onKeyDown={handleSearchKeyDown}
                       onFocus={() => setShowResults(searchQuery.length > 0)}
-                      placeholder="Search by title, genre, actors..." 
-                      className="bg-transparent border-none outline-none text-sm w-full text-white placeholder:text-white/20 font-medium"
+                      placeholder="Search for movies, shows and more..."
+                      className="bg-transparent border-none outline-none text-sm flex-1 min-w-0 text-white placeholder:text-[#8e8e93]"
                     />
-                    <button className="p-2 hover:bg-white/5 rounded-xl text-white/30 hover:text-orange-500 transition-all">
-                      <Mic size={18} />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (searchQuery.trim()) {
+                          setShowResults(false);
+                          navigate(`/search/${searchQuery}`);
+                        }
+                      }}
+                      className="p-2 text-[#8e8e93] hover:text-white rounded-full hover:bg-white/5 shrink-0"
+                      aria-label="Search"
+                    >
+                      <Search size={20} />
                     </button>
                   </div>
 
-                  {/* Suggestions Search Dropdown */}
                   <AnimatePresence>
                     {showResults && searchResults.length > 0 && (
-                      <motion.div 
+                      <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
-                        className="absolute top-full left-0 right-0 mt-3 glass-dark p-4 rounded-3xl border border-white/10 shadow-2xl overflow-hidden pointer-events-auto"
+                        className="absolute top-full left-0 right-0 mt-3 bg-[#141414] p-4 rounded-2xl border border-white/10 shadow-2xl overflow-hidden pointer-events-auto z-50"
                       >
                         <div className="space-y-1">
                           <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-3 px-2">Matches Found</p>
                           {searchResults.map((video) => (
-                            <div 
-                              key={video.videoId || video.id} 
+                            <div
+                              key={video.videoId || video.id}
                               onClick={() => {
                                 if (onVideoSelect) onVideoSelect(video);
                                 else navigate(`/watch/${video.videoId || video.id}`);
                                 setShowResults(false);
                                 setSearchQuery('');
                               }}
-                              className="flex items-center gap-4 p-3 rounded-2xl hover:bg-white/5 cursor-pointer group transition-all"
+                              className="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 cursor-pointer group transition-all"
                             >
                               <div className="w-20 aspect-video rounded-xl overflow-hidden bg-white/5 flex-shrink-0 relative">
-                                <img src={video.thumbnail} alt="" className="w-full h-full object-cover transition-transform group-hover:scale-110 animate-fade" />
+                                <img src={video.thumbnail} alt="" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
                               </div>
                               <div className="flex flex-col min-w-0">
                                 <h4 className="text-xs font-bold text-white line-clamp-1 group-hover:text-orange-500 transition-colors">{video.title}</h4>
@@ -234,46 +247,34 @@ const CinematicNavbar = ({ onSearch, onTagSelect, searchResults = [], onVideoSel
                   </AnimatePresence>
                 </div>
 
-                {/* Right actions, profile & tags */}
-                <div className="flex items-center gap-3 md:gap-5">
-                  {/* Desktop Tags */}
-                  <div className="hidden xl:flex items-center gap-1 glass-dark p-1 rounded-2xl mr-4 border border-white/5">
-                    {tabs.map((tab) => (
-                      <button
-                        key={tab.name}
-                        onClick={() => handleTagClick(tab)}
-                        className={`px-6 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
-                          activeTab === tab.name 
-                          ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' 
-                          : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                        }`}
-                      >
-                        {tab.icon}
-                        {tab.name}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Mobile/Tablet: Sleek Search Toggle Icon */}
+                {/* Right: bell + profile / mobile controls */}
+                <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-auto">
                   <button 
+                    type="button"
                     onClick={() => setShowMobileSearch(true)}
-                    className="lg:hidden w-12 h-12 glass rounded-2xl flex items-center justify-center group hover:border-orange-500/50 transition-all active:scale-90 cursor-pointer"
+                    className="lg:hidden p-2 text-white hover:text-[#f97316] transition-colors"
+                    aria-label="Search"
                   >
-                    <Search size={20} className="text-white/60 group-hover:text-orange-500 transition-colors" />
+                    <Search size={22} />
                   </button>
 
-                  {/* Notification button (Desktop only) */}
-                  <button className="hidden sm:flex relative w-12 h-12 glass rounded-2xl items-center justify-center group hover:border-orange-500/50 transition-all active:scale-90 cursor-pointer">
-                    <Bell size={20} className="text-white/60 group-hover:text-orange-500 transition-colors" />
-                    <span className="absolute top-3.5 right-3.5 w-2.5 h-2.5 bg-orange-500 rounded-full border border-[#0a0502] animate-pulse" />
+                  <button
+                    type="button"
+                    className="hidden lg:flex relative p-2.5 rounded-xl text-[#8e8e93] hover:text-white hover:bg-white/[0.06] transition-colors"
+                    aria-label="Notifications"
+                  >
+                    <Bell size={22} />
+                    <span className="absolute top-2 right-2 w-2 h-2 bg-[#f97316] rounded-full ring-2 ring-black" />
                   </button>
 
                   {/* Hamburger menu button in the right for mobile/tablet */}
                   <button 
+                    type="button"
                     onClick={() => setShowMobileDrawer(true)}
-                    className="lg:hidden w-12 h-12 glass rounded-2xl flex items-center justify-center text-white/60 hover:text-orange-500 hover:border-orange-500/50 transition-all cursor-pointer active:scale-90"
+                    className="lg:hidden p-2 text-white hover:text-[#f97316] transition-colors"
+                    aria-label="Menu"
                   >
-                    <Menu size={20} />
+                    <Menu size={22} />
                   </button>
 
                   {/* Profile Menu dropdown widget */}
@@ -282,7 +283,7 @@ const CinematicNavbar = ({ onSearch, onTagSelect, searchResults = [], onVideoSel
                       onClick={() => setShowProfileDropdown(!showProfileDropdown)}
                       className="flex items-center gap-3 glass p-1.5 pr-5 rounded-2xl cursor-pointer group hover:border-orange-500/30 transition-all active:scale-95"
                     >
-                      <div className="w-9 h-9 rounded-xl overflow-hidden border border-white/10 group-hover:border-orange-500/50 transition-all">
+                      <div className="w-9 h-9 rounded-full overflow-hidden border border-white/10">
                         <img 
                           src={isLoggedIn && userProfile ? userProfile.avatar : "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&auto=format&fit=crop"} 
                           alt="User" 
@@ -379,123 +380,105 @@ const CinematicNavbar = ({ onSearch, onTagSelect, searchResults = [], onVideoSel
               onClick={() => setShowMobileDrawer(false)}
               className="absolute inset-0 bg-black/80 backdrop-blur-sm"
             />
-            {/* Drawer list */}
+            {/* Drawer list matching the MENU Mockup */}
             <motion.div 
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="relative w-80 max-w-full min-h-screen bg-[#0a0502]/95 border-r border-white/10 flex flex-col p-6 space-y-8 z-10"
+              className="relative w-[min(320px,82vw)] min-h-screen bg-black border-r border-white/[0.06] flex flex-col p-5 z-10 text-left"
             >
-              {/* Drawer header branding */}
-              <div className="flex items-center justify-between">
+              {/* Profile Card Header exactly like MENU mockup */}
+              <div className="flex items-center justify-between border-b border-white/5 pb-5">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-orange-500 rounded-2xl flex items-center justify-center font-black text-white text-sm">PV</div>
-                  <span className="text-xl font-black tracking-tighter text-glow text-white">PlayVerse</span>
-                </div>
-                <button 
-                  onClick={() => setShowMobileDrawer(false)}
-                  className="p-2 hover:bg-white/5 rounded-xl text-white/50 hover:text-white transition-all cursor-pointer"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-
-              {/* Mobile Search Input */}
-              <div className="px-1">
-                <div className="w-full bg-white/5 border border-white/10 px-4 py-3 rounded-xl flex items-center gap-3 focus-within:border-orange-500/40 transition-all">
-                  <Search size={16} className="text-white/30" />
-                  <input 
-                    type="text" 
-                    value={searchQuery}
-                    onChange={handleSearchChange}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && searchQuery.trim()) {
-                        setShowMobileDrawer(false);
-                        setShowResults(false);
-                        navigate(`/search/${searchQuery}`);
-                      }
-                    }}
-                    placeholder="Search titles, creators..." 
-                    className="bg-transparent border-none outline-none text-xs w-full text-white placeholder:text-white/20 font-medium"
-                  />
-                </div>
-              </div>
-
-              {/* Mobile links list */}
-              <div className="flex-1 space-y-6 overflow-y-auto custom-scrollbar">
-                <div className="space-y-1">
-                  <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] px-3 mb-2">Explore</p>
-                  {tabs.map((tab) => (
-                    <button
-                      key={tab.name}
-                      onClick={() => handleTagClick(tab)}
-                      className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl text-sm font-bold transition-all text-left cursor-pointer ${
-                        activeTab === tab.name 
-                          ? 'bg-orange-500/10 text-orange-500 border border-orange-500/20' 
-                          : 'text-white/60 hover:text-white hover:bg-white/5'
-                      }`}
-                    >
-                      {tab.icon}
-                      {tab.name}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="space-y-1">
-                  <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] px-3 mb-2">Library & Logs</p>
-                  {isLoggedIn ? (
-                    <>
-                      <Link 
-                        to="/profile" 
-                        onClick={() => setShowMobileDrawer(false)}
-                        className="flex items-center gap-4 px-4 py-3 rounded-xl text-sm font-bold text-white/60 hover:text-white hover:bg-white/5 transition-all"
-                      >
-                        <User size={16} className="text-orange-500" /> Account Dashboard
-                      </Link>
-                      <Link 
-                        to="/library" 
-                        onClick={() => setShowMobileDrawer(false)}
-                        className="flex items-center gap-4 px-4 py-3 rounded-xl text-sm font-bold text-white/60 hover:text-white hover:bg-white/5 transition-all"
-                      >
-                        <Library size={16} className="text-orange-500" /> Saved Playlists
-                      </Link>
-                      <Link 
-                        to="/history" 
-                        onClick={() => setShowMobileDrawer(false)}
-                        className="flex items-center gap-4 px-4 py-3 rounded-xl text-sm font-bold text-white/60 hover:text-white hover:bg-white/5 transition-all"
-                      >
-                        <History size={16} className="text-orange-500" /> Watch Logs
-                      </Link>
-                      <Link 
-                        to="/settings" 
-                        onClick={() => setShowMobileDrawer(false)}
-                        className="flex items-center gap-4 px-4 py-3 rounded-xl text-sm font-bold text-white/60 hover:text-white hover:bg-white/5 transition-all"
-                      >
-                        <Settings size={16} className="text-orange-500" /> settings
-                      </Link>
-                    </>
-                  ) : (
+                  {/* Rounded avatar PV */}
+                  <div className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center font-black text-white text-base shadow-lg shadow-orange-500/20">
+                    {isLoggedIn && userProfile ? userProfile.username.slice(0, 2).toUpperCase() : 'PV'}
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-white text-sm">
+                      {isLoggedIn && userProfile ? userProfile.username : 'sri'}
+                    </h3>
                     <Link 
-                      to="/auth" 
+                      to="/profile"
                       onClick={() => setShowMobileDrawer(false)}
-                      className="flex items-center gap-4 px-4 py-3.5 rounded-xl text-xs font-black uppercase tracking-wider text-orange-500 hover:bg-white/5 transition-all"
+                      className="text-[10px] font-black text-orange-500 uppercase tracking-widest block hover:text-white transition-colors"
                     >
-                      <LogIn size={16} /> Sign In
+                      View Profile
                     </Link>
-                  )}
+                  </div>
                 </div>
+
               </div>
 
-              {/* Mobile disconnect item */}
-              {isLoggedIn && (
-                <button 
-                  onClick={handleLogout}
-                  className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl text-xs font-bold text-red-500 hover:bg-red-500/10 transition-all text-left"
-                >
-                  <LogOut size={16} /> Disconnect Account
-                </button>
-              )}
+              {/* Drawer navigation */}
+              <div className="flex-1 space-y-1 overflow-y-auto hide-scrollbar">
+                {[
+                  { label: 'Home', icon: <Home size={18} />, path: '/' },
+                  { label: 'Trending', icon: <Sparkles size={18} />, path: '/trending' },
+                  { label: 'My List', icon: <Plus size={18} />, path: '/library' },
+                ].map((item) => (
+                  <button
+                    key={item.label}
+                    onClick={() => {
+                      setShowMobileDrawer(false);
+                      if (item.path !== '#') navigate(item.path);
+                    }}
+                    className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl hover:bg-white/5 text-white/70 hover:text-white transition-all cursor-pointer group text-sm font-semibold"
+                  >
+                    <div className="flex items-center gap-3 text-white/50 group-hover:text-orange-500 transition-colors">
+                      {item.icon}
+                      <span className="text-white/80 group-hover:text-white transition-colors">{item.label}</span>
+                    </div>
+                    <ChevronRight size={14} className="text-white/20 group-hover:text-white transition-colors" />
+                  </button>
+                ))}
+
+                <hr className="border-white/[0.08] my-3" />
+
+                {[
+                  { label: 'History', icon: <History size={18} />, path: '/history' },
+                  { label: 'Settings', icon: <Settings size={18} />, path: '/settings' },
+                  { label: 'Help & Support', icon: <HelpCircle size={18} />, path: '#' },
+                ].map((item) => (
+                  <button
+                    key={item.label}
+                    onClick={() => {
+                      setShowMobileDrawer(false);
+                      if (item.path !== '#') navigate(item.path);
+                    }}
+                    className="w-full flex items-center justify-between px-3 py-3.5 text-[#8e8e93] hover:text-white transition-colors text-sm"
+                  >
+                    <span className="flex items-center gap-3">{item.icon}{item.label}</span>
+                    <ChevronRight size={16} className="opacity-40" />
+                  </button>
+                ))}
+
+                <hr className="border-white/[0.08] my-3" />
+
+                {isLoggedIn ? (
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setShowMobileDrawer(false);
+                      handleLogout();
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-3.5 text-[#f97316] text-sm font-medium"
+                  >
+                    <LogOut size={18} />
+                    Sign Out
+                  </button>
+                ) : (
+                  <Link 
+                    to="/auth" 
+                    onClick={() => setShowMobileDrawer(false)}
+                    className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-orange-500 hover:bg-white/5 transition-all text-left text-sm font-bold mt-4"
+                  >
+                    <LogIn size={18} />
+                    <span>Sign In</span>
+                  </Link>
+                )}
+              </div>
             </motion.div>
           </div>
         )}
