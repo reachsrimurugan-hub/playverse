@@ -7,13 +7,21 @@ export default {
   theme: {
     extend: {
       colors: {
-        yt: {
-          bg: '#0f0f0f',
-          light: '#272727',
-          hover: '#3f3f3f',
-          text: '#f1f1f1',
-          textMuted: '#aaaaaa'
+        cinematic: {
+          bg: '#1a0f0a',
+          primary: '#f59e0b', // amber-500
+          secondary: '#78350f', // amber-900
+          accent: '#fbbf24', // amber-400
+          glass: 'rgba(255, 255, 255, 0.05)',
+          glassBorder: 'rgba(255, 255, 255, 0.1)',
         }
+      },
+      borderRadius: {
+        '3xl': '1.5rem',
+        '4xl': '2rem',
+      },
+      backdropBlur: {
+        'xs': '2px',
       }
     },
   },

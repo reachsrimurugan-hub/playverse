@@ -1,27 +1,47 @@
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Navbar from './components/Navbar';
-import Home from './pages/Home';
-import VideoDetails from './pages/VideoDetails';
-import SearchResults from './pages/SearchResults';
-import { SidebarProvider } from './context/SidebarContext';
 import { LanguageProvider } from './context/LanguageContext';
+import { SidebarProvider } from './context/SidebarContext';
+import QuotaDashboard from './components/QuotaDashboard';
+import Loader from './components/Loader';
+
+// Lazy load pages for performance optimization
+const CinematicDashboard = lazy(() => import('./pages/CinematicDashboard'));
+const VideoDetails = lazy(() => import('./pages/VideoDetails'));
+const SearchResults = lazy(() => import('./pages/SearchResults'));
+const CategoryPage = lazy(() => import('./pages/CategoryPage'));
+const TrendingPage = lazy(() => import('./pages/TrendingPage'));
+const LibraryPage = lazy(() => import('./pages/LibraryPage'));
+const HistoryPage = lazy(() => import('./pages/HistoryPage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const AuthPage = lazy(() => import('./pages/AuthPage'));
 
 function App() {
   return (
     <LanguageProvider>
       <SidebarProvider>
         <BrowserRouter>
-          <div className="flex flex-col h-screen bg-yt-bg overflow-hidden text-yt-text">
-            <Navbar />
-            <div className="flex flex-1 overflow-hidden">
-              <Routes>
-                <Route path="/" exact element={<Home />} />
-                <Route path="/video/:id" element={<VideoDetails />} />
-                <Route path="/search/:searchTerm" element={<SearchResults />} />
-              </Routes>
+          <Suspense fallback={
+            <div className="min-h-screen bg-[#0a0502] flex items-center justify-center">
+              <Loader />
             </div>
-          </div>
+          }>
+            <Routes>
+              <Route path="/" element={<CinematicDashboard />} />
+              <Route path="/watch/:videoId" element={<VideoDetails />} />
+              <Route path="/search/:searchTerm" element={<SearchResults />} />
+              <Route path="/category/:categoryName" element={<CategoryPage />} />
+              <Route path="/trending" element={<TrendingPage />} />
+              <Route path="/library" element={<LibraryPage />} />
+              <Route path="/history" element={<HistoryPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/auth" element={<AuthPage />} />
+            </Routes>
+          </Suspense>
         </BrowserRouter>
+        <QuotaDashboard />
       </SidebarProvider>
     </LanguageProvider>
   );

@@ -24,17 +24,17 @@ const Navbar = () => {
   return (
     <nav className="flex items-center justify-between px-4 py-2 h-16 bg-yt-bg sticky top-0 z-50">
       <div className="flex items-center gap-4">
-        <button 
+        <button
           onClick={toggleSidebar}
           className="p-2 hover:bg-yt-light rounded-full transition-colors text-yt-text hidden md:block"
         >
           <FiMenu size={24} />
         </button>
         <Link to="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-red-600 rounded-xl flex items-center justify-center text-white font-bold tracking-tighter shadow-lg shadow-red-600/20">
-            NX
+          <div className="w-8 h-8 bg-orange-600 rounded-xl flex items-center justify-center text-white font-bold tracking-tighter shadow-lg shadow-orange-600/20">
+            PV
           </div>
-          <span className="text-xl font-bold tracking-tight hidden sm:block">Nextube</span>
+          <span className="text-xl font-bold tracking-tight hidden sm:block text-white">PlayVerse</span>
         </Link>
       </div>
 
@@ -44,14 +44,14 @@ const Navbar = () => {
 
       <div className="flex items-center gap-2 sm:gap-4">
         <div className="relative" ref={langRef}>
-          <button 
+          <button
             onClick={() => setShowLangDropdown(!showLangDropdown)}
-            className="p-2 hover:bg-yt-light rounded-full transition-colors flex items-center gap-1"
+            className="p-2 hover:bg-yt-light rounded-full transition-colors flex items-center gap-1 text-white"
           >
             <FiGlobe size={20} />
             <span className="text-xs hidden lg:block uppercase font-bold">{selectedLanguage.code}</span>
           </button>
-          
+
           {showLangDropdown && (
             <div className="absolute top-full right-0 mt-2 w-48 bg-yt-light border border-[#303030] rounded-xl shadow-2xl z-50 overflow-hidden py-1">
               <div className="px-4 py-2 text-xs font-bold text-yt-textMuted border-b border-[#303030] uppercase">Select Language</div>
@@ -73,10 +73,10 @@ const Navbar = () => {
           )}
         </div>
 
-        <button className="p-2 hover:bg-yt-light rounded-full transition-colors hidden sm:block">
+        <button className="p-2 hover:bg-yt-light rounded-full transition-colors hidden sm:block text-white">
           <FiBell size={20} />
         </button>
-        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-blue-500 flex items-center justify-center font-semibold cursor-pointer shadow-lg shadow-blue-500/20">
+        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-blue-500 flex items-center justify-center font-semibold cursor-pointer shadow-lg shadow-blue-500/20 text-white">
           U
         </div>
       </div>

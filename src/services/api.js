@@ -1,15 +1,16 @@
 import axios from 'axios';
+import { quotaTracker } from '../utils/quotaTracker';
 
-const API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
-const BASE_URL = 'https://www.googleapis.com/youtube/v3';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-export const fetchFromAPI = async (url) => {
-  const separator = url.includes('?') ? '&' : '?';
+export const fetchFromAPI = async (endpoint, params = {}) => {
   try {
-    const { data } = await axios.get(`${BASE_URL}/${url}${separator}key=${API_KEY}`);
-    return data;
+    const response = await axios.get(`${API_URL}${endpoint}`, { params });
+    quotaTracker.track(endpoint);
+    return response.data;
   } catch (error) {
-    console.error('Error fetching from YouTube API', error);
+    console.error(`API Error on ${endpoint}:`, error.message);
+    if (error.response?.status === 404) return null;
     throw error;
   }
 };

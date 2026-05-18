@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiSearch } from 'react-icons/fi';
 import { fetchFromAPI } from '../services/api';
@@ -7,6 +7,7 @@ const SearchBar = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [lastSearched, setLastSearched] = useState('');
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
 
@@ -20,15 +21,25 @@ const SearchBar = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Optimized fetch suggestions with debounce and cancellation
   useEffect(() => {
     const fetchSuggestions = async () => {
-      if (searchTerm.trim().length > 1) {
+      // Rule: Do not call API for empty or very short queries (< 3 characters)
+      if (searchTerm.trim().length >= 3 && searchTerm !== lastSearched) {
         try {
-          const data = await fetchFromAPI(`search?part=snippet&q=${searchTerm}&type=video&maxResults=5`);
+          const data = await fetchFromAPI(
+            `search?part=snippet&q=${searchTerm}&type=video&maxResults=5`,
+            { 
+              ttl: 30, // Cache suggestions for 30 mins
+              cancelPrevious: true 
+            }
+          );
           setSuggestions(data?.items || []);
           setShowDropdown(true);
         } catch (error) {
-          console.error("Error fetching search suggestions", error);
+          if (error.name !== 'CanceledError') {
+            console.error("Error fetching search suggestions", error);
+          }
         }
       } else {
         setSuggestions([]);
@@ -36,20 +47,26 @@ const SearchBar = () => {
       }
     };
 
-    const debounceTimer = setTimeout(fetchSuggestions, 500);
+    // Rule: Implement debounce for search input (800ms delay)
+    const debounceTimer = setTimeout(fetchSuggestions, 800);
     return () => clearTimeout(debounceTimer);
-  }, [searchTerm]);
+  }, [searchTerm, lastSearched]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (searchTerm.trim()) {
+  const handleSubmit = useCallback((e) => {
+    e?.preventDefault();
+    const cleanTerm = searchTerm.trim();
+    
+    // Rule: Prevent repeated searches for the same keyword consecutively
+    if (cleanTerm && cleanTerm !== lastSearched) {
       setShowDropdown(false);
-      navigate(`/search/${searchTerm}`);
+      setLastSearched(cleanTerm);
+      navigate(`/search/${cleanTerm}`);
     }
-  };
+  }, [searchTerm, lastSearched, navigate]);
 
   const handleSuggestionClick = (title) => {
     setSearchTerm(title);
+    setLastSearched(title);
     setShowDropdown(false);
     navigate(`/search/${title}`);
   };

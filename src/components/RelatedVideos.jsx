@@ -12,7 +12,10 @@ const RelatedVideos = ({ videoId }) => {
     const fetchRelatedVideos = async () => {
       setIsLoading(true);
       try {
-        const data = await fetchFromAPI(`search?part=snippet&relatedToVideoId=${videoId}&type=video&maxResults=20`);
+        const data = await fetchFromAPI(
+          `search?part=snippet&relatedToVideoId=${videoId}&type=video&maxResults=20`,
+          { ttl: 60, cancelPrevious: true }
+        );
         setVideos(data.items);
       } catch (error) {
         console.error('Failed to fetch related videos', error);

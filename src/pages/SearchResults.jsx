@@ -1,23 +1,33 @@
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import Sidebar from '../components/Sidebar';
-import VideoGrid from '../components/VideoGrid';
-import { fetchFromAPI } from '../services/api';
-import { useLanguage } from '../context/LanguageContext';
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import CinematicNavbar from '../components/CinematicNavbar';
+import CinematicMovieGrid from '../components/CinematicMovieGrid';
+import { searchVideos } from '../services/cinematicApi';
 
 const SearchResults = () => {
   const { searchTerm } = useParams();
+  const navigate = useNavigate();
   const [videos, setVideos] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const { selectedLanguage } = useLanguage();
+  const mouseGlowRef = useRef(null);
 
   useEffect(() => {
-    const fetchVideos = async () => {
+    const handleMouseMove = (e) => {
+      if (mouseGlowRef.current) {
+        mouseGlowRef.current.style.left = `${e.clientX}px`;
+        mouseGlowRef.current.style.top = `${e.clientY}px`;
+      }
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  useEffect(() => {
+    const fetchResults = async () => {
       setIsLoading(true);
       try {
-        const data = await fetchFromAPI(`search?part=snippet&q=${searchTerm}&maxResults=50&relevanceLanguage=${selectedLanguage.code}`);
-        setVideos(data?.items || []);
+        const results = await searchVideos(searchTerm);
+        setVideos(results || []);
       } catch (error) {
         console.error('Failed to fetch videos', error);
       } finally {
@@ -25,18 +35,34 @@ const SearchResults = () => {
       }
     };
 
-    fetchVideos();
-  }, [searchTerm, selectedLanguage]);
+    fetchResults();
+  }, [searchTerm]);
+
+  const handleVideoSelect = (video) => {
+    const id = video.videoId || video.id;
+    navigate(`/watch/${id}`);
+  };
 
   return (
-    <div className="flex flex-col md:flex-row w-full h-[calc(100vh-64px)]">
-      <Sidebar selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} />
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 bg-yt-bg">
-        <h2 className="text-2xl font-bold text-white mb-6">
-          Search Results for: <span className="text-red-600">{searchTerm}</span>
-        </h2>
-        <VideoGrid videos={videos} isLoading={isLoading} />
-      </div>
+    <div className="relative min-h-screen bg-[#0a0502] text-white selection:bg-orange-500/30">
+      <div className="cinematic-bg" />
+      <div className="grain" />
+      <div ref={mouseGlowRef} className="mouse-glow" />
+
+      <CinematicNavbar 
+        onSearch={(q) => navigate(`/search/${q}`)} 
+        searchResults={videos.slice(0, 5)}
+        onVideoSelect={handleVideoSelect}
+      />
+
+      <main className="max-w-[1800px] mx-auto pt-32 pb-20 px-4 md:px-10">
+        <CinematicMovieGrid 
+          movies={videos} 
+          title={`Search Results: ${searchTerm}`} 
+          loading={isLoading} 
+          onVideoSelect={handleVideoSelect}
+        />
+      </main>
     </div>
   );
 };
