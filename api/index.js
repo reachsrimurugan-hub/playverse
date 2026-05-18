@@ -4,10 +4,6 @@ const axios = require('axios');
 const NodeCache = require('node-cache');
 const path = require('path');
 
-// Load environment variables from both root and server directories
-require('dotenv').config();
-require('dotenv').config({ path: path.join(__dirname, '.env') });
-
 const app = express();
 const port = process.env.PORT || 5000;
 const cache = new NodeCache({ stdTTL: 3600 }); // Cache for 1 hour
