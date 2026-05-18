@@ -248,6 +248,91 @@ app.get(['/api/videos/:id/related', '/videos/:id/related'], async (req, res) => 
   }
 });
 
+const fs = require('fs');
+const USERS_FILE_PATH = path.join(__dirname, '../server/users.json');
+
+// Memory database fallback for stateless Vercel production environments
+let memoryUsers = [
+  {
+    username: "sri",
+    email: "reachsrimurugan@gmail.com",
+    password: "password123",
+    tier: "PREMIUM",
+    avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop",
+    joined: "May 2026"
+  }
+];
+
+const loadUsers = () => {
+  try {
+    if (fs.existsSync(USERS_FILE_PATH)) {
+      const raw = fs.readFileSync(USERS_FILE_PATH, 'utf8');
+      return JSON.parse(raw);
+    }
+  } catch (err) {
+    console.error('Failed to read users.json, using memory database:', err.message);
+  }
+  return memoryUsers;
+};
+
+const saveUsers = (usersList) => {
+  memoryUsers = usersList;
+  try {
+    fs.writeFileSync(USERS_FILE_PATH, JSON.stringify(usersList, null, 2), 'utf8');
+  } catch (err) {
+    console.error('Failed to write users.json (Vercel read-only filesystem fallback):', err.message);
+  }
+};
+
+// 5. Auth Register
+app.post(['/api/auth/register', '/auth/register'], (req, res) => {
+  const { username, email, password } = req.body;
+  if (!username || !email || !password) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
+
+  const usersList = loadUsers();
+  const exists = usersList.find(u => u.email.toLowerCase() === email.toLowerCase());
+  if (exists) {
+    return res.status(400).json({ error: 'User with this email already exists' });
+  }
+
+  const newUser = {
+    username,
+    email: email.toLowerCase(),
+    password,
+    tier: 'Cinema Elite',
+    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop',
+    joined: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  };
+
+  usersList.push(newUser);
+  saveUsers(usersList);
+
+  const { password: _, ...userWithoutPassword } = newUser;
+  res.json({ success: true, user: userWithoutPassword });
+});
+
+// 6. Auth Login
+app.post(['/api/auth/login', '/auth/login'], (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required' });
+  }
+
+  const usersList = loadUsers();
+  const user = usersList.find(
+    u => u.email.toLowerCase() === email.toLowerCase() && u.password === password
+  );
+
+  if (!user) {
+    return res.status(401).json({ error: 'Invalid email or password' });
+  }
+
+  const { password: _, ...userWithoutPassword } = user;
+  res.json({ success: true, user: userWithoutPassword });
+});
+
 if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
   app.listen(port, () => {
     console.log(`Nextube Backend running on port ${port}`);

@@ -39,12 +39,6 @@ const CinematicHero = ({ video, onPlay }) => {
             {title}
           </h1>
 
-          {description && (
-            <p className="text-xs sm:text-sm text-white/70 line-clamp-2 leading-relaxed">
-              {description}
-            </p>
-          )}
-
           <div className="flex flex-col sm:flex-row gap-3 mt-1">
             <button
               type="button"

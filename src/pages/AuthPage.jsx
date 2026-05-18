@@ -2,6 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Shield, User, Lock, Mail, ChevronRight } from 'lucide-react';
+import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_URL || (
+  typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:5000/api'
+    : '/api'
+);
 
 const AuthPage = () => {
   const navigate = useNavigate();
@@ -24,7 +31,7 @@ const AuthPage = () => {
 
   const handleInputChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-    setErrors({ ...errors, [e.target.name]: '' });
+    setErrors({ ...errors, [e.target.name]: '', server: '' });
   };
 
   const validate = () => {
@@ -44,31 +51,48 @@ const AuthPage = () => {
     return Object.keys(tempErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
 
     setLoading(true);
-    setTimeout(() => {
+    setErrors({});
+    try {
+      if (activeTab === 'register') {
+        // Sign Up
+        const response = await axios.post(`${API_URL}/auth/register`, {
+          username: form.name,
+          email: form.email,
+          password: form.password
+        });
+        
+        if (response.data.success) {
+          const registeredUser = response.data.user;
+          localStorage.setItem('nextube_profile', JSON.stringify(registeredUser));
+          localStorage.setItem('nextube_logged_in', 'true');
+          navigate('/');
+        }
+      } else {
+        // Sign In
+        const response = await axios.post(`${API_URL}/auth/login`, {
+          email: form.email,
+          password: form.password
+        });
+        
+        if (response.data.success) {
+          const loggedInUser = response.data.user;
+          localStorage.setItem('nextube_profile', JSON.stringify(loggedInUser));
+          localStorage.setItem('nextube_logged_in', 'true');
+          navigate('/');
+        }
+      }
+    } catch (error) {
+      console.error('Authentication error:', error);
+      const serverMessage = error.response?.data?.error || 'Authentication failed. Please try again.';
+      setErrors({ server: serverMessage });
+    } finally {
       setLoading(false);
-      // Store user details mock login
-      const mockUser = {
-        username: activeTab === 'register' ? form.name : (form.email.split('@')[0]),
-        email: form.email,
-        tier: 'Cinema Elite',
-        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop',
-        joined: 'May 2026',
-        watchTime: '142 Hours',
-        videosWatched: '520 Videos',
-        playlistsCount: '6'
-      };
-
-      localStorage.setItem('nextube_profile', JSON.stringify(mockUser));
-      localStorage.setItem('nextube_logged_in', 'true');
-      
-      // Redirect to homepage
-      navigate('/');
-    }, 1500);
+    }
   };
 
   return (
@@ -128,6 +152,11 @@ const AuthPage = () => {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
+            {errors.server && (
+              <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-2xl text-xs font-bold uppercase tracking-wider text-center">
+                {errors.server}
+              </div>
+            )}
             <AnimatePresence mode="wait">
               {activeTab === 'register' && (
                 <motion.div 

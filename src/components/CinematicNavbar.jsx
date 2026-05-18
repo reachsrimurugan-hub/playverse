@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import debounce from 'lodash.debounce';
 import { useLanguage, languages } from '../context/LanguageContext';
+import playButtonImg from '../assets/play-button.png';
 
 const NAV_LINKS = [
   { label: 'Home', to: '/' },
@@ -171,9 +172,11 @@ const CinematicNavbar = ({ onSearch, searchResults = [], onVideoSelect }) => {
               >
                 <div className="flex items-center gap-3 shrink-0">
                   <Link to="/" className="flex items-center gap-2.5 cursor-pointer">
-                    <div className="w-9 h-9 bg-[#f97316] rounded-full flex items-center justify-center font-bold text-white text-xs flex-shrink-0">
-                      PV
-                    </div>
+                    <img 
+                      src={playButtonImg} 
+                      alt="PlayVerse" 
+                      className="w-9 h-9 object-contain rounded-full flex-shrink-0"
+                    />
                     <span className="text-lg font-bold text-white hidden sm:inline">PlayVerse</span>
                   </Link>
                 </div>
