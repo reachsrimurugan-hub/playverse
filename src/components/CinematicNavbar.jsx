@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate, Link, NavLink } from 'react-router-dom';
+import { useNavigate, Link, NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronDown, Search, Home, Plus, Play, User, Settings, History, 
@@ -20,7 +20,11 @@ const NAV_LINKS = [
 
 const CinematicNavbar = ({ onSearch, searchResults = [], onVideoSelect }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isHomepage = location.pathname === '/';
+  
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isNavbarVisible, setIsNavbarVisible] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showResults, setShowResults] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
@@ -60,6 +64,70 @@ const CinematicNavbar = ({ onSearch, searchResults = [], onVideoSelect }) => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Mouse move and scroll listener to show/hide navbar on other pages
+  useEffect(() => {
+    if (isHomepage) {
+      setIsNavbarVisible(true);
+      return;
+    }
+
+    // Default to hidden on other pages initially, or keep visible if at the very top of page
+    setIsNavbarVisible(window.scrollY < 20);
+
+    let lastScrollY = window.scrollY;
+    let hideTimeout = null;
+
+    const handleMouseMove = (e) => {
+      // Clear any pending hide timeouts
+      if (hideTimeout) clearTimeout(hideTimeout);
+
+      // If mouse is near the top (within 70px)
+      if (e.clientY <= 70) {
+        setIsNavbarVisible(true);
+      } else if (e.clientY > 130 && window.scrollY > 20) {
+        // If they move cursor away, hide it after a short lag to prevent erratic flickering
+        // But only if dropdowns are closed!
+        if (!showProfileDropdown && !showLanguageDropdown && !showMobileDrawer && !showMobileSearch) {
+          hideTimeout = setTimeout(() => {
+            setIsNavbarVisible(false);
+          }, 600);
+        }
+      }
+    };
+
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      // If close to top, always show
+      if (currentScrollY < 20) {
+        setIsNavbarVisible(true);
+        lastScrollY = currentScrollY;
+        return;
+      }
+
+      // Detect scrolling direction
+      if (currentScrollY < lastScrollY) {
+        // Scrolling UP - show navbar
+        setIsNavbarVisible(true);
+      } else if (currentScrollY > lastScrollY + 10) {
+        // Scrolling DOWN - hide navbar (if dropdowns are closed)
+        if (!showProfileDropdown && !showLanguageDropdown && !showMobileDrawer && !showMobileSearch) {
+          setIsNavbarVisible(false);
+        }
+      }
+      lastScrollY = currentScrollY;
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('scroll', handleScroll);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('scroll', handleScroll);
+      if (hideTimeout) clearTimeout(hideTimeout);
+    };
+  }, [isHomepage, showProfileDropdown, showLanguageDropdown, showMobileDrawer, showMobileSearch]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -107,11 +175,16 @@ const CinematicNavbar = ({ onSearch, searchResults = [], onVideoSelect }) => {
 
   return (
     <>
-      <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 px-4 md:px-12 lg:px-16 xl:px-24 py-3 md:py-6 ${
-        isScrolled || showMobileDrawer
-          ? 'bg-black/95 backdrop-blur-md border-b border-white/[0.06]'
-          : 'bg-black md:bg-transparent'
-      }`}>
+      <nav 
+        className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 px-4 md:px-12 lg:px-16 xl:px-24 py-3.5 md:py-5 ${
+          !isHomepage || isScrolled || showMobileDrawer
+            ? 'bg-black/90 backdrop-blur-lg border-b border-white/[0.08] shadow-[0_15px_40px_rgba(0,0,0,0.9)]'
+            : 'bg-black md:bg-transparent'
+        }`}
+        style={{
+          transform: isNavbarVisible ? 'translateY(0)' : 'translateY(-100%)',
+        }}
+      >
         <div className="max-w-[1800px] mx-auto">
           <AnimatePresence mode="wait">
             {showMobileSearch ? (
@@ -329,7 +402,7 @@ const CinematicNavbar = ({ onSearch, searchResults = [], onVideoSelect }) => {
                     >
                       <div className="w-9 h-9 rounded-full overflow-hidden border border-white/10">
                         <img 
-                          src={isLoggedIn && userProfile ? userProfile.avatar : "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&auto=format&fit=crop"} 
+                          src={isLoggedIn && userProfile ? userProfile.avatar : "src/assets/man1.png"} 
                           alt="User" 
                           className="w-full h-full object-cover"
                         />

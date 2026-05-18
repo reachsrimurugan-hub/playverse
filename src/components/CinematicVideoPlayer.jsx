@@ -105,14 +105,14 @@ const CinematicVideoPlayer = ({
       }
       lastTapRef.current = null;
     } else {
-      // It's a single tap: Toggle Controls visibility
+      // It's a single tap: Toggle Play/Pause!
       lastTapRef.current = { time: now };
       
       // Delay single-tap actions slightly to check if a second tap is incoming
       setTimeout(() => {
         if (lastTapRef.current && lastTapRef.current.time === now) {
-          setShowControls(prev => !prev);
-          resetControlsTimeout();
+          togglePlay();
+          setShowControls(true);
         }
       }, DOUBLE_TAP_DELAY);
     }
@@ -236,6 +236,13 @@ const CinematicVideoPlayer = ({
       ytPlayer.mute();
     } else {
       ytPlayer.unMute();
+    }
+
+    // Force trigger autoplay playback
+    try {
+      ytPlayer.playVideo();
+    } catch (e) {
+      console.warn("Autoplay was blocked or failed to initialize:", e);
     }
 
     // Populate dynamic quality settings if available
@@ -431,6 +438,27 @@ const CinematicVideoPlayer = ({
         onClick={handlePlayerTap}
         className="absolute inset-0 z-10 cursor-pointer"
       />
+
+      {/* Pulsating Glassmorphic Center Play Button Overlay */}
+      <AnimatePresence>
+        {!isPlaying && !isBuffering && !isQualitySwitching && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            onClick={togglePlay}
+            className="absolute inset-0 z-30 flex items-center justify-center bg-black/20 backdrop-blur-[1px] cursor-pointer"
+          >
+            <motion.div 
+              whileHover={{ scale: 1.1, backgroundColor: 'rgba(249, 115, 22, 0.95)' }}
+              whileTap={{ scale: 0.95 }}
+              className="w-20 h-20 rounded-full bg-[#f97316]/90 backdrop-blur-md flex items-center justify-center text-white border border-white/20 shadow-[0_0_50px_rgba(249,115,22,0.4)] transition-all duration-300 animate-pulse"
+            >
+              <Play size={36} fill="white" className="ml-1.5 text-white" />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Animated double-tap seek feedback bubbles */}
       <AnimatePresence>

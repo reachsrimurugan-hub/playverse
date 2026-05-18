@@ -23,7 +23,7 @@ const ProfilePage = () => {
     username: 'sri',
     email: 'reachsrimurugan@gmail.com',
     tier: 'PREMIUM',
-    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop',
+    avatar: 'src/assets/man1.png',
     joined: 'May 2026'
   });
   

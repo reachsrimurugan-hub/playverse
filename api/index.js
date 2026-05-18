@@ -22,21 +22,21 @@ const API_KEY = process.env.YOUTUBE_API_KEY || 'AIzaSyCLRL7wxpn2MZqta0U9_iHwdPZk
 // Normalize YouTube Response
 const normalizeVideo = (item) => {
   const videoId = typeof item.id === 'string' ? item.id : item.id.videoId;
-  
+
   // Safe default fallback thumbnail (sleek, high-quality cinematic abstract banner)
   const fallbackThumbnail = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop';
-  
+
   return {
     id: videoId,
     videoId: videoId,
     title: item.snippet.title,
     description: item.snippet.description,
-    thumbnail: item.snippet.thumbnails?.maxres?.url || 
-               item.snippet.thumbnails?.standard?.url || 
-               item.snippet.thumbnails?.high?.url || 
-               item.snippet.thumbnails?.medium?.url || 
-               item.snippet.thumbnails?.default?.url || 
-               fallbackThumbnail,
+    thumbnail: item.snippet.thumbnails?.maxres?.url ||
+      item.snippet.thumbnails?.standard?.url ||
+      item.snippet.thumbnails?.high?.url ||
+      item.snippet.thumbnails?.medium?.url ||
+      item.snippet.thumbnails?.default?.url ||
+      fallbackThumbnail,
     channelTitle: item.snippet.channelTitle,
     channelId: item.snippet.channelId,
     publishedAt: item.snippet.publishedAt,
@@ -71,15 +71,15 @@ app.get(['/api/videos', '/videos'], async (req, res) => {
     });
 
     const processed = processVideos(response.data.items);
-    
+
     cache.set(cacheKey, processed);
     res.json(processed);
   } catch (error) {
     console.error('Error fetching popular videos:', error.message);
-    res.status(500).json({ 
-      error: 'Failed to fetch popular videos', 
-      details: error.message, 
-      response: error.response?.data 
+    res.status(500).json({
+      error: 'Failed to fetch popular videos',
+      details: error.message,
+      response: error.response?.data
     });
   }
 });
@@ -122,10 +122,10 @@ app.get(['/api/search', '/search'], async (req, res) => {
     res.json(processed);
   } catch (error) {
     console.error('Search error:', error.message);
-    res.status(500).json({ 
-      error: 'Search failed', 
-      details: error.message, 
-      response: error.response?.data 
+    res.status(500).json({
+      error: 'Search failed',
+      details: error.message,
+      response: error.response?.data
     });
   }
 });
@@ -155,10 +155,10 @@ app.get(['/api/videos/:id', '/videos/:id'], async (req, res) => {
     res.json(normalized);
   } catch (error) {
     console.error('Video detail error:', error.message);
-    res.status(500).json({ 
-      error: 'Failed to fetch video details', 
-      details: error.message, 
-      response: error.response?.data 
+    res.status(500).json({
+      error: 'Failed to fetch video details',
+      details: error.message,
+      response: error.response?.data
     });
   }
 });
