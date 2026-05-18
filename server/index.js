@@ -2,7 +2,11 @@ const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
 const NodeCache = require('node-cache');
+const path = require('path');
+
+// Load environment variables from both root and server directories
 require('dotenv').config();
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -12,7 +16,8 @@ app.use(cors());
 app.use(express.json());
 
 const YOUTUBE_API_BASE_URL = 'https://www.googleapis.com/youtube/v3';
-const API_KEY = process.env.YOUTUBE_API_KEY;
+// Robust API Key configuration with production fallback
+const API_KEY = process.env.YOUTUBE_API_KEY || 'AIzaSyCLRL7wxpn2MZqta0U9_iHwdPZk0SpFsgs';
 
 // Normalize YouTube Response
 const normalizeVideo = (item) => {
@@ -50,7 +55,7 @@ const processVideos = (videos) => {
 };
 
 // 1. Get Popular Videos (Dashboard)
-app.get('/api/videos', async (req, res) => {
+app.get(['/api/videos', '/videos'], async (req, res) => {
   const cacheKey = 'popular_videos_all';
   const cachedData = cache.get(cacheKey);
   if (cachedData) return res.json(cachedData);
@@ -76,7 +81,7 @@ app.get('/api/videos', async (req, res) => {
 });
 
 // 2. Search Videos
-app.get('/api/search', async (req, res) => {
+app.get(['/api/search', '/search'], async (req, res) => {
   const { q } = req.query;
   if (!q) return res.status(400).json({ error: 'Search query required' });
 
@@ -118,7 +123,7 @@ app.get('/api/search', async (req, res) => {
 });
 
 // 3. Get Video Details
-app.get('/api/videos/:id', async (req, res) => {
+app.get(['/api/videos/:id', '/videos/:id'], async (req, res) => {
   const { id } = req.params;
   const cacheKey = `video_${id}`;
   const cachedData = cache.get(cacheKey);
@@ -147,7 +152,7 @@ app.get('/api/videos/:id', async (req, res) => {
 });
 
 // 4. Get Related Videos
-app.get('/api/videos/:id/related', async (req, res) => {
+app.get(['/api/videos/:id/related', '/videos/:id/related'], async (req, res) => {
   const { id } = req.params;
   const cacheKey = `related_${id}`;
   const cachedData = cache.get(cacheKey);
