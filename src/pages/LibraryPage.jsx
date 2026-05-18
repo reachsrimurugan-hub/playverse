@@ -68,14 +68,14 @@ const LibraryPage = () => {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#0a0502] text-white selection:bg-orange-500/30 overflow-x-hidden">
+    <div className="relative min-h-screen bg-[#0a0502] text-white selection:bg-orange-500/30">
       <div className="cinematic-bg" />
       <div className="grain" />
       <div ref={mouseGlowRef} className="mouse-glow" />
 
       <CinematicNavbar onSearch={(q) => navigate(`/search/${q}`)} />
 
-      <main className="relative z-10 pt-32 pb-20 px-4 md:px-10 max-w-[1800px] mx-auto space-y-12">
+      <main className="relative z-10 pt-32 pb-20 px-6 md:px-12 lg:px-16 xl:px-24 max-w-[1800px] mx-auto space-y-12">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div className="space-y-2">

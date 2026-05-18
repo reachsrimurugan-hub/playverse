@@ -15,6 +15,9 @@ const TrendingPage = () => {
 
   // Mouse Follow Glow Effect
   useEffect(() => {
+    const isHoverDevice = window.matchMedia('(hover: hover)').matches;
+    if (!isHoverDevice) return;
+
     const handleMouseMove = (e) => {
       if (mouseGlowRef.current) {
         mouseGlowRef.current.style.left = `${e.clientX}px`;
@@ -51,7 +54,7 @@ const TrendingPage = () => {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#0a0502] text-white selection:bg-orange-500/30 overflow-x-hidden">
+    <div className="relative min-h-screen bg-[#0a0502] text-white selection:bg-orange-500/30">
       {/* Background Atmosphere */}
       <div className="cinematic-bg" />
       <div className="grain" />
@@ -68,7 +71,7 @@ const TrendingPage = () => {
         activeTag="Trending"
       />
 
-      <main className="relative z-10 pt-32 pb-20 px-4 md:px-10 max-w-[1800px] mx-auto space-y-16">
+      <main className="relative z-10 pt-32 pb-20 px-6 md:px-12 lg:px-16 xl:px-24 max-w-[1800px] mx-auto space-y-16">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">

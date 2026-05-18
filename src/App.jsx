@@ -4,6 +4,7 @@ import { LanguageProvider } from './context/LanguageContext';
 import { SidebarProvider } from './context/SidebarContext';
 import QuotaDashboard from './components/QuotaDashboard';
 import Loader from './components/Loader';
+import CinematicBottomNav from './components/CinematicBottomNav';
 
 // Lazy load pages for performance optimization
 const CinematicDashboard = lazy(() => import('./pages/CinematicDashboard'));
@@ -39,6 +40,7 @@ function App() {
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/auth" element={<AuthPage />} />
             </Routes>
+            <CinematicBottomNav />
           </Suspense>
         </BrowserRouter>
         <QuotaDashboard />

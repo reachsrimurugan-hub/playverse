@@ -39,9 +39,18 @@ const RelatedVideos = ({ videoId }) => {
           <Link to={`/video/${relatedVideoId}`} key={idx} className="flex gap-3 group w-full">
             <div className="relative w-[160px] min-w-[160px] aspect-video rounded-xl overflow-hidden">
               <img 
-                src={snippet?.thumbnails?.medium?.url} 
+                src={snippet?.thumbnails?.maxres?.url || 
+                     snippet?.thumbnails?.standard?.url || 
+                     snippet?.thumbnails?.high?.url || 
+                     snippet?.thumbnails?.medium?.url || 
+                     snippet?.thumbnails?.default?.url || 
+                     'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop'} 
                 alt={snippet?.title} 
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop';
+                }}
               />
               <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </div>

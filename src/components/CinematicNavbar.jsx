@@ -16,6 +16,7 @@ const CinematicNavbar = ({ onSearch, onTagSelect, searchResults = [], onVideoSel
   const [showResults, setShowResults] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [showMobileDrawer, setShowMobileDrawer] = useState(false);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
 
@@ -106,195 +107,263 @@ const CinematicNavbar = ({ onSearch, onTagSelect, searchResults = [], onVideoSel
 
   return (
     <>
-      <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 px-4 md:px-10 py-6 ${
-        isScrolled ? 'bg-[#0a0502]/85 backdrop-blur-3xl border-b border-white/10 py-4 shadow-2xl shadow-black/25' : 'bg-transparent'
+      <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 px-6 md:px-12 lg:px-16 xl:px-24 py-4 md:py-6 ${
+        isScrolled ? 'bg-[#0a0502]/85 backdrop-blur-3xl border-b border-white/10 py-3 md:py-4 shadow-2xl shadow-black/25' : 'bg-transparent'
       }`}>
-        <div className="max-w-[1800px] mx-auto flex items-center justify-between gap-8">
-          
-          {/* Left Side menu & branding */}
-          <div className="flex items-center gap-6">
-            <button 
-              onClick={() => setShowMobileDrawer(true)}
-              className="w-10 h-10 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center text-white/70 hover:text-orange-500 hover:bg-white/10 transition-all cursor-pointer"
-            >
-              <Menu size={20} />
-            </button>
-            
-            <Link to="/" className="flex items-center gap-3 cursor-pointer group">
-              <div className="w-10 h-10 bg-orange-500 rounded-2xl flex items-center justify-center font-black text-white text-sm shadow-lg shadow-orange-500/20 group-hover:scale-110 transition-transform">
-                PV
-              </div>
-              <span className="text-2xl font-black tracking-tighter text-glow text-white group-hover:text-orange-500 transition-colors">PlayVerse</span>
-            </Link>
-          </div>
-
-          {/* Interactive Search Bar center */}
-          <div className="hidden lg:flex flex-1 max-w-2xl relative">
-            <div className="w-full bg-white/5 backdrop-blur-xl border border-white/10 px-6 py-3.5 rounded-2xl flex items-center gap-4 focus-within:border-orange-500/40 focus-within:shadow-[0_0_25px_rgba(249,115,22,0.15)] transition-all group">
-              <Search size={20} className="text-white/30 group-focus-within:text-orange-500 transition-colors" />
-              <input 
-                type="text" 
-                value={searchQuery}
-                onChange={handleSearchChange}
-                onKeyDown={handleSearchKeyDown}
-                onFocus={() => setShowResults(searchQuery.length > 0)}
-                placeholder="Search by title, genre, actors..." 
-                className="bg-transparent border-none outline-none text-sm w-full text-white placeholder:text-white/20 font-medium"
-              />
-              <button className="p-2 hover:bg-white/5 rounded-xl text-white/30 hover:text-orange-500 transition-all">
-                <Mic size={18} />
-              </button>
-            </div>
-
-            {/* Suggestions Search Dropdown */}
-            <AnimatePresence>
-              {showResults && searchResults.length > 0 && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className="absolute top-full left-0 right-0 mt-3 glass-dark p-4 rounded-3xl border border-white/10 shadow-2xl overflow-hidden pointer-events-auto"
+        <div className="max-w-[1800px] mx-auto">
+          <AnimatePresence mode="wait">
+            {showMobileSearch ? (
+              <motion.div 
+                key="mobile-search-bar"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="w-full flex items-center gap-3"
+              >
+                <div className="flex-1 bg-white/5 border border-white/10 px-4 py-3 rounded-2xl flex items-center gap-3 focus-within:border-orange-500/40 transition-all">
+                  <Search size={18} className="text-white/30" />
+                  <input 
+                    type="text" 
+                    autoFocus
+                    value={searchQuery}
+                    onChange={handleSearchChange}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && searchQuery.trim()) {
+                        setShowMobileSearch(false);
+                        setShowResults(false);
+                        navigate(`/search/${searchQuery}`);
+                      }
+                    }}
+                    placeholder="Search titles, creators..." 
+                    className="bg-transparent border-none outline-none text-xs w-full text-white placeholder:text-white/20 font-medium"
+                  />
+                  {searchQuery && (
+                    <button 
+                      onClick={() => {
+                        setSearchQuery('');
+                        setShowResults(false);
+                      }} 
+                      className="text-white/30 hover:text-white"
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
+                </div>
+                <button 
+                  onClick={() => {
+                    setShowMobileSearch(false);
+                    setShowResults(false);
+                    setSearchQuery('');
+                  }}
+                  className="px-4 py-3.5 rounded-2xl bg-white/5 hover:bg-white/10 text-xs font-black uppercase tracking-widest text-white/60 hover:text-white transition-all cursor-pointer"
                 >
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-3 px-2">Matches Found</p>
-                    {searchResults.map((video) => (
-                      <div 
-                        key={video.videoId || video.id} 
-                        onClick={() => {
-                          if (onVideoSelect) onVideoSelect(video);
-                          else navigate(`/watch/${video.videoId || video.id}`);
-                          setShowResults(false);
-                          setSearchQuery('');
-                        }}
-                        className="flex items-center gap-4 p-3 rounded-2xl hover:bg-white/5 cursor-pointer group transition-all"
+                  Cancel
+                </button>
+              </motion.div>
+            ) : (
+              <motion.div 
+                key="standard-nav"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex items-center justify-between gap-8"
+              >
+                {/* Left branding - ONLY logo on the left */}
+                <div className="flex items-center gap-6">
+                  <Link to="/" className="flex items-center gap-3 cursor-pointer group">
+                    <div className="w-10 h-10 bg-orange-500 rounded-2xl flex items-center justify-center font-black text-white text-sm shadow-lg shadow-orange-500/20 group-hover:scale-110 transition-transform flex-shrink-0">
+                      PV
+                    </div>
+                    <span className="text-2xl font-black tracking-tighter text-glow text-white group-hover:text-orange-500 transition-colors">PlayVerse</span>
+                  </Link>
+                </div>
+
+                {/* Center search bar for Desktop */}
+                <div className="hidden lg:flex flex-1 max-w-2xl relative">
+                  <div className="w-full bg-white/5 backdrop-blur-xl border border-white/10 px-6 py-3.5 rounded-2xl flex items-center gap-4 focus-within:border-orange-500/40 focus-within:shadow-[0_0_25px_rgba(249,115,22,0.15)] transition-all group">
+                    <Search size={20} className="text-white/30 group-focus-within:text-orange-500 transition-colors" />
+                    <input 
+                      type="text" 
+                      value={searchQuery}
+                      onChange={handleSearchChange}
+                      onKeyDown={handleSearchKeyDown}
+                      onFocus={() => setShowResults(searchQuery.length > 0)}
+                      placeholder="Search by title, genre, actors..." 
+                      className="bg-transparent border-none outline-none text-sm w-full text-white placeholder:text-white/20 font-medium"
+                    />
+                    <button className="p-2 hover:bg-white/5 rounded-xl text-white/30 hover:text-orange-500 transition-all">
+                      <Mic size={18} />
+                    </button>
+                  </div>
+
+                  {/* Suggestions Search Dropdown */}
+                  <AnimatePresence>
+                    {showResults && searchResults.length > 0 && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className="absolute top-full left-0 right-0 mt-3 glass-dark p-4 rounded-3xl border border-white/10 shadow-2xl overflow-hidden pointer-events-auto"
                       >
-                        <div className="w-20 aspect-video rounded-xl overflow-hidden bg-white/5 flex-shrink-0 relative">
-                          <img src={video.thumbnail} alt="" className="w-full h-full object-cover transition-transform group-hover:scale-110 animate-fade" />
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-3 px-2">Matches Found</p>
+                          {searchResults.map((video) => (
+                            <div 
+                              key={video.videoId || video.id} 
+                              onClick={() => {
+                                if (onVideoSelect) onVideoSelect(video);
+                                else navigate(`/watch/${video.videoId || video.id}`);
+                                setShowResults(false);
+                                setSearchQuery('');
+                              }}
+                              className="flex items-center gap-4 p-3 rounded-2xl hover:bg-white/5 cursor-pointer group transition-all"
+                            >
+                              <div className="w-20 aspect-video rounded-xl overflow-hidden bg-white/5 flex-shrink-0 relative">
+                                <img src={video.thumbnail} alt="" className="w-full h-full object-cover transition-transform group-hover:scale-110 animate-fade" />
+                              </div>
+                              <div className="flex flex-col min-w-0">
+                                <h4 className="text-xs font-bold text-white line-clamp-1 group-hover:text-orange-500 transition-colors">{video.title}</h4>
+                                <p className="text-[10px] font-bold text-white/30 uppercase mt-0.5">{video.channelTitle}</p>
+                              </div>
+                              <Play size={16} className="ml-auto text-white/0 group-hover:text-orange-500 transition-all translate-x-2 group-hover:translate-x-0" />
+                            </div>
+                          ))}
                         </div>
-                        <div className="flex flex-col min-w-0">
-                          <h4 className="text-xs font-bold text-white line-clamp-1 group-hover:text-orange-500 transition-colors">{video.title}</h4>
-                          <p className="text-[10px] font-bold text-white/30 uppercase mt-0.5">{video.channelTitle}</p>
-                        </div>
-                        <Play size={16} className="ml-auto text-white/0 group-hover:text-orange-500 transition-all translate-x-2 group-hover:translate-x-0" />
-                      </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Right actions, profile & tags */}
+                <div className="flex items-center gap-3 md:gap-5">
+                  {/* Desktop Tags */}
+                  <div className="hidden xl:flex items-center gap-1 glass-dark p-1 rounded-2xl mr-4 border border-white/5">
+                    {tabs.map((tab) => (
+                      <button
+                        key={tab.name}
+                        onClick={() => handleTagClick(tab)}
+                        className={`px-6 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                          activeTab === tab.name 
+                          ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' 
+                          : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                        }`}
+                      >
+                        {tab.icon}
+                        {tab.name}
+                      </button>
                     ))}
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
 
-          {/* Right actions, profile & tags */}
-          <div className="flex items-center gap-3 md:gap-5">
-            {/* Desktop Tags */}
-            <div className="hidden xl:flex items-center gap-1 glass-dark p-1 rounded-2xl mr-4 border border-white/5">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.name}
-                  onClick={() => handleTagClick(tab)}
-                  className={`px-6 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
-                    activeTab === tab.name 
-                    ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' 
-                    : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                  }`}
-                >
-                  {tab.icon}
-                  {tab.name}
-                </button>
-              ))}
-            </div>
+                  {/* Mobile/Tablet: Sleek Search Toggle Icon */}
+                  <button 
+                    onClick={() => setShowMobileSearch(true)}
+                    className="lg:hidden w-12 h-12 glass rounded-2xl flex items-center justify-center group hover:border-orange-500/50 transition-all active:scale-90 cursor-pointer"
+                  >
+                    <Search size={20} className="text-white/60 group-hover:text-orange-500 transition-colors" />
+                  </button>
 
-            {/* Notification button */}
-            <button className="relative w-12 h-12 glass rounded-2xl flex items-center justify-center group hover:border-orange-500/50 transition-all active:scale-90 cursor-pointer">
-              <Bell size={20} className="text-white/60 group-hover:text-orange-500 transition-colors" />
-              <span className="absolute top-3.5 right-3.5 w-2.5 h-2.5 bg-orange-500 rounded-full border border-[#0a0502] animate-pulse" />
-            </button>
+                  {/* Notification button (Desktop only) */}
+                  <button className="hidden sm:flex relative w-12 h-12 glass rounded-2xl items-center justify-center group hover:border-orange-500/50 transition-all active:scale-90 cursor-pointer">
+                    <Bell size={20} className="text-white/60 group-hover:text-orange-500 transition-colors" />
+                    <span className="absolute top-3.5 right-3.5 w-2.5 h-2.5 bg-orange-500 rounded-full border border-[#0a0502] animate-pulse" />
+                  </button>
 
-            {/* Profile Menu dropdown widget */}
-            <div className="relative" ref={profileRef}>
-              <div 
-                onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                className="flex items-center gap-3 glass p-1.5 pr-5 rounded-2xl cursor-pointer group hover:border-orange-500/30 transition-all active:scale-95"
-              >
-                <div className="w-9 h-9 rounded-xl overflow-hidden border border-white/10 group-hover:border-orange-500/50 transition-all">
-                  <img 
-                    src={isLoggedIn && userProfile ? userProfile.avatar : "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&auto=format&fit=crop"} 
-                    alt="User" 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="hidden sm:block">
-                  <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">{isLoggedIn ? 'Premium' : 'Guest'}</p>
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs font-bold text-white truncate max-w-[80px]">
-                      {isLoggedIn && userProfile ? userProfile.username : 'Sign In'}
-                    </span>
-                    <ChevronDown size={12} className="text-white/30 group-hover:text-orange-500 transition-colors" />
+                  {/* Hamburger menu button in the right for mobile/tablet */}
+                  <button 
+                    onClick={() => setShowMobileDrawer(true)}
+                    className="lg:hidden w-12 h-12 glass rounded-2xl flex items-center justify-center text-white/60 hover:text-orange-500 hover:border-orange-500/50 transition-all cursor-pointer active:scale-90"
+                  >
+                    <Menu size={20} />
+                  </button>
+
+                  {/* Profile Menu dropdown widget */}
+                  <div className="hidden lg:block relative" ref={profileRef}>
+                    <div 
+                      onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                      className="flex items-center gap-3 glass p-1.5 pr-5 rounded-2xl cursor-pointer group hover:border-orange-500/30 transition-all active:scale-95"
+                    >
+                      <div className="w-9 h-9 rounded-xl overflow-hidden border border-white/10 group-hover:border-orange-500/50 transition-all">
+                        <img 
+                          src={isLoggedIn && userProfile ? userProfile.avatar : "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&auto=format&fit=crop"} 
+                          alt="User" 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="hidden sm:block">
+                        <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">{isLoggedIn ? 'Premium' : 'Guest'}</p>
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs font-bold text-white truncate max-w-[80px]">
+                            {isLoggedIn && userProfile ? userProfile.username : 'Sign In'}
+                          </span>
+                          <ChevronDown size={12} className="text-white/30 group-hover:text-orange-500 transition-colors" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Profile Dropdown box */}
+                    <AnimatePresence>
+                      {showProfileDropdown && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: 15 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 15 }}
+                          className="absolute top-full right-0 mt-3 w-56 glass-dark border border-white/10 rounded-2xl shadow-3xl overflow-hidden py-2"
+                        >
+                          {isLoggedIn ? (
+                            <>
+                              <Link 
+                                to="/profile" 
+                                onClick={() => setShowProfileDropdown(false)}
+                                className="flex items-center gap-3 px-4 py-3 text-xs font-bold text-white/70 hover:text-white hover:bg-white/5 transition-all"
+                              >
+                                <User size={16} className="text-orange-500" /> My Profile
+                              </Link>
+                              <Link 
+                                to="/library" 
+                                onClick={() => setShowProfileDropdown(false)}
+                                className="flex items-center gap-3 px-4 py-3 text-xs font-bold text-white/70 hover:text-white hover:bg-white/5 transition-all"
+                              >
+                                <Library size={16} className="text-orange-500" /> My Library
+                              </Link>
+                              <Link 
+                                to="/history" 
+                                onClick={() => setShowProfileDropdown(false)}
+                                className="flex items-center gap-3 px-4 py-3 text-xs font-bold text-white/70 hover:text-white hover:bg-white/5 transition-all"
+                              >
+                                <History size={16} className="text-orange-500" /> Streaming Logs
+                              </Link>
+                              <Link 
+                                to="/settings" 
+                                onClick={() => setShowProfileDropdown(false)}
+                                className="flex items-center gap-3 px-4 py-3 text-xs font-bold text-white/70 hover:text-white hover:bg-white/5 transition-all"
+                              >
+                                <Settings size={16} className="text-orange-500" /> Settings
+                              </Link>
+                              <div className="h-px bg-white/5 my-1" />
+                              <button 
+                                onClick={handleLogout}
+                                className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-red-500 hover:bg-red-500/10 transition-all text-left"
+                              >
+                                <LogOut size={16} /> Disconnect
+                              </button>
+                            </>
+                          ) : (
+                            <Link 
+                              to="/auth" 
+                              onClick={() => setShowProfileDropdown(false)}
+                              className="flex items-center gap-3 px-4 py-3.5 text-xs font-black uppercase tracking-wider text-orange-500 hover:bg-white/5 transition-all"
+                            >
+                              <LogIn size={16} /> Connect Account
+                            </Link>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </div>
-              </div>
-
-              {/* Profile Dropdown box */}
-              <AnimatePresence>
-                {showProfileDropdown && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 15 }}
-                    className="absolute top-full right-0 mt-3 w-56 glass-dark border border-white/10 rounded-2xl shadow-3xl overflow-hidden py-2"
-                  >
-                    {isLoggedIn ? (
-                      <>
-                        <Link 
-                          to="/profile" 
-                          onClick={() => setShowProfileDropdown(false)}
-                          className="flex items-center gap-3 px-4 py-3 text-xs font-bold text-white/70 hover:text-white hover:bg-white/5 transition-all"
-                        >
-                          <User size={16} className="text-orange-500" /> My Profile
-                        </Link>
-                        <Link 
-                          to="/library" 
-                          onClick={() => setShowProfileDropdown(false)}
-                          className="flex items-center gap-3 px-4 py-3 text-xs font-bold text-white/70 hover:text-white hover:bg-white/5 transition-all"
-                        >
-                          <Library size={16} className="text-orange-500" /> My Library
-                        </Link>
-                        <Link 
-                          to="/history" 
-                          onClick={() => setShowProfileDropdown(false)}
-                          className="flex items-center gap-3 px-4 py-3 text-xs font-bold text-white/70 hover:text-white hover:bg-white/5 transition-all"
-                        >
-                          <History size={16} className="text-orange-500" /> Streaming Logs
-                        </Link>
-                        <Link 
-                          to="/settings" 
-                          onClick={() => setShowProfileDropdown(false)}
-                          className="flex items-center gap-3 px-4 py-3 text-xs font-bold text-white/70 hover:text-white hover:bg-white/5 transition-all"
-                        >
-                          <Settings size={16} className="text-orange-500" /> Settings
-                        </Link>
-                        <div className="h-px bg-white/5 my-1" />
-                        <button 
-                          onClick={handleLogout}
-                          className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-red-500 hover:bg-red-500/10 transition-all text-left"
-                        >
-                          <LogOut size={16} /> Disconnect
-                        </button>
-                      </>
-                    ) : (
-                      <Link 
-                        to="/auth" 
-                        onClick={() => setShowProfileDropdown(false)}
-                        className="flex items-center gap-3 px-4 py-3.5 text-xs font-black uppercase tracking-wider text-orange-500 hover:bg-white/5 transition-all"
-                      >
-                        <LogIn size={16} /> Connect Account
-                      </Link>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </nav>
 
@@ -322,7 +391,7 @@ const CinematicNavbar = ({ onSearch, onTagSelect, searchResults = [], onVideoSel
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-orange-500 rounded-2xl flex items-center justify-center font-black text-white text-sm">PV</div>
-                  <span className="text-xl font-black tracking-tighter text-white">PlayVerse</span>
+                  <span className="text-xl font-black tracking-tighter text-glow text-white">PlayVerse</span>
                 </div>
                 <button 
                   onClick={() => setShowMobileDrawer(false)}
@@ -330,6 +399,27 @@ const CinematicNavbar = ({ onSearch, onTagSelect, searchResults = [], onVideoSel
                 >
                   <X size={20} />
                 </button>
+              </div>
+
+              {/* Mobile Search Input */}
+              <div className="px-1">
+                <div className="w-full bg-white/5 border border-white/10 px-4 py-3 rounded-xl flex items-center gap-3 focus-within:border-orange-500/40 transition-all">
+                  <Search size={16} className="text-white/30" />
+                  <input 
+                    type="text" 
+                    value={searchQuery}
+                    onChange={handleSearchChange}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && searchQuery.trim()) {
+                        setShowMobileDrawer(false);
+                        setShowResults(false);
+                        navigate(`/search/${searchQuery}`);
+                      }
+                    }}
+                    placeholder="Search titles, creators..." 
+                    className="bg-transparent border-none outline-none text-xs w-full text-white placeholder:text-white/20 font-medium"
+                  />
+                </div>
               </div>
 
               {/* Mobile links list */}

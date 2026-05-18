@@ -13,6 +13,9 @@ const CategoryPage = () => {
   const mouseGlowRef = useRef(null);
 
   useEffect(() => {
+    const isHoverDevice = window.matchMedia('(hover: hover)').matches;
+    if (!isHoverDevice) return;
+
     const handleMouseMove = (e) => {
       if (mouseGlowRef.current) {
         mouseGlowRef.current.style.left = `${e.clientX}px`;
@@ -68,7 +71,7 @@ const CategoryPage = () => {
         activeTag={categoryName}
       />
 
-      <main className="max-w-[1800px] mx-auto pt-32 pb-20 px-4 md:px-10">
+      <main className="max-w-[1800px] mx-auto pt-32 pb-20 px-6 md:px-12 lg:px-16 xl:px-24">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

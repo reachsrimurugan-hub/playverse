@@ -4,9 +4,9 @@ import CinematicNavbar from '../components/CinematicNavbar';
 import CinematicVideoPlayer from '../components/CinematicVideoPlayer';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getVideoDetails, getRelatedVideos } from '../services/cinematicApi';
-import { 
-  ChevronLeft, Share2, Plus, ThumbsUp, Info, Sparkles, 
-  Heart, Bookmark, Clock, Check, Send, MessageSquare 
+import {
+  ChevronLeft, Share2, Plus, ThumbsUp, Info, Sparkles,
+  Heart, Bookmark, Clock, Check, Send, MessageSquare
 } from 'lucide-react';
 
 const VideoDetails = () => {
@@ -17,7 +17,7 @@ const VideoDetails = () => {
   const [loading, setLoading] = useState(true);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [isTheaterMode, setIsTheaterMode] = useState(false);
-  
+
   // Interactive Stats & Subscriptions
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
@@ -33,10 +33,13 @@ const VideoDetails = () => {
     { id: 3, author: 'Emma Watson', text: 'Stunning direction. Looking forward to sharing this with my circle.', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=100&auto=format&fit=crop', likes: 45, time: '1 day ago' }
   ]);
   const [newComment, setNewComment] = useState('');
-  
+
   const mouseGlowRef = useRef(null);
 
   useEffect(() => {
+    const isHoverDevice = window.matchMedia('(hover: hover)').matches;
+    if (!isHoverDevice) return;
+
     const handleMouseMove = (e) => {
       if (mouseGlowRef.current) {
         mouseGlowRef.current.style.left = `${e.clientX}px`;
@@ -168,12 +171,28 @@ const VideoDetails = () => {
     triggerToast('Link copied to clipboard!');
   };
 
+  const [showInfoOverlay, setShowInfoOverlay] = useState(false);
+  const [showNavbar, setShowNavbar] = useState(false);
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      // If cursor coordinates are in the top 100px of the viewport, reveal the navbar.
+      if (e.clientY < 100) {
+        setShowNavbar(true);
+      } else {
+        setShowNavbar(false);
+      }
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
   if (loading && !video) return (
     <div className="relative w-full h-screen flex flex-col items-center justify-center bg-[#0a0502] text-white">
       <div className="cinematic-bg" />
       <div className="grain" />
       <div className="flex flex-col items-center gap-6 z-10">
-        <motion.div 
+        <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
           className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full"
@@ -198,17 +217,26 @@ const VideoDetails = () => {
   );
 
   return (
-    <div className="relative min-h-screen bg-[#0a0502] text-white selection:bg-orange-500/30 overflow-x-hidden">
+    <div className="relative min-h-screen bg-[#070301] text-white selection:bg-orange-500/30 overflow-x-hidden">
+      {/* Cinematic Ambient Glow */}
       <div className="cinematic-bg" />
       <div className="grain" />
       <div ref={mouseGlowRef} className="mouse-glow" />
-      
-      <CinematicNavbar onVideoSelect={handleVideoSelect} />
+
+      {/* Floating Interactive Navbar Wrapper */}
+      <motion.div
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ y: showNavbar ? 0 : -100, opacity: showNavbar ? 1 : 0 }}
+        transition={{ duration: 0.35, ease: "easeOut" }}
+        className="fixed top-0 left-0 w-full z-[100] pointer-events-auto"
+      >
+        <CinematicNavbar onVideoSelect={handleVideoSelect} />
+      </motion.div>
 
       {/* Floating Notifications Toast */}
       <AnimatePresence>
         {toastMessage && (
-          <motion.div 
+          <motion.div
             initial={{ y: 50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 50, opacity: 0 }}
@@ -220,219 +248,183 @@ const VideoDetails = () => {
         )}
       </AnimatePresence>
 
-      <main className={`max-w-[1800px] mx-auto px-4 md:px-10 pb-20 transition-all ${isTheaterMode ? 'pt-24' : 'pt-32'}`}>
+      {/* Info Overlay Panel */}
+      <AnimatePresence>
+        {showInfoOverlay && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[500] bg-black/85 backdrop-blur-md flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 30 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 30 }}
+              className="glass-premium max-w-2xl w-full rounded-[3.5rem] border border-white/10 p-8 md:p-10 relative overflow-hidden shadow-2xl text-left"
+            >
+              {/* Backglow */}
+              <div className="absolute -top-24 -right-24 w-60 h-60 bg-orange-500/10 blur-[100px] rounded-full" />
+              
+              <button 
+                onClick={() => setShowInfoOverlay(false)}
+                className="absolute top-8 right-8 p-2.5 rounded-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all cursor-pointer"
+              >
+                <ChevronLeft size={20} className="rotate-180" />
+              </button>
+
+              <div className="space-y-6">
+                <div className="flex items-center gap-3 text-orange-500">
+                  <Info size={24} className="animate-pulse" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em] font-mono">Stream Specifications</span>
+                </div>
+                
+                <h2 className="text-2xl font-black tracking-tight leading-snug">{video.title}</h2>
+                
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-6 pt-2">
+                  <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                    <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-1 font-mono">Publisher</p>
+                    <p className="text-xs font-extrabold text-orange-500 truncate">{video.channelTitle}</p>
+                  </div>
+                  <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                    <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-1 font-mono">Views</p>
+                    <p className="text-xs font-extrabold text-white">{parseInt(video.views).toLocaleString()}</p>
+                  </div>
+                  <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                    <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-1 font-mono">Published</p>
+                    <p className="text-xs font-extrabold text-white">{new Date(video.publishedAt).toLocaleDateString()}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="text-xs font-black uppercase tracking-widest text-white/40 font-mono">Description Summary</h4>
+                  <div className="max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                    <p className="text-xs text-white/60 leading-relaxed font-medium whitespace-pre-line">
+                      {video.description || "No description provided."}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 bg-orange-500/10 px-5 py-4 rounded-2xl border border-orange-500/20 text-orange-500 text-[10px] font-black uppercase tracking-widest font-mono">
+                  <Sparkles size={16} className="flex-shrink-0" />
+                  <span>Licensed PlayVerse stream authorization via YouTube API</span>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Immersive Watch Page Layout with dynamic animated top padding */}
+      <div 
+        className="w-full flex flex-col transition-all duration-300 ease-out"
+        style={{ paddingTop: showNavbar ? '110px' : '16px' }}
+      >
         
-        {/* Back Button */}
-        {!isTheaterMode && (
-          <motion.button 
-            initial={{ x: -20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
+        {/* Back navigation header */}
+        <div className="max-w-[1700px] w-full mx-auto px-4 sm:px-6 md:px-12 lg:px-16 xl:px-24 py-3 flex items-center justify-between">
+          <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-white/40 hover:text-orange-500 transition-colors mb-8 group"
+            className="flex items-center gap-2 text-white/50 hover:text-orange-500 transition-colors group cursor-pointer"
           >
             <ChevronLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
-            <span className="text-xs font-bold uppercase tracking-widest">Back</span>
-          </motion.button>
-        )}
-
-        {/* Widescreen Theater Mode Video block */}
-        {isTheaterMode && (
-          <div className="w-full mb-10">
-            <CinematicVideoPlayer 
-              videoId={videoId} 
-              title={video.title} 
-              onTheaterToggle={setIsTheaterMode}
-            />
-          </div>
-        )}
-
-        {/* Two column layouts */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+            <span className="text-xs font-black uppercase tracking-widest font-mono">Back</span>
+          </button>
           
-          {/* Main Column */}
-          <div className="lg:col-span-2 space-y-8">
-            
-            {/* Standard Widescreen Video Player */}
-            {!isTheaterMode && (
-              <motion.div 
-                initial={{ scale: 0.98, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="w-full"
+          <span className="text-[9px] font-black uppercase tracking-[0.25em] text-white/20 select-none hidden md:inline font-mono">
+            Now Playing • PlayVerse Cinema Immersive
+          </span>
+        </div>
+
+        {/* 1. Immersive Video Player Container (optimized to fit window) */}
+        <div className="w-full bg-black/40 border-y border-white/5 shadow-[0_30px_100px_rgba(0,0,0,0.95)]">
+          <div className="max-w-[1720px] mx-auto px-0 md:px-4 lg:px-6">
+            <motion.div
+              initial={{ scale: 0.99, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              className="w-full relative overflow-hidden md:rounded-[2.5rem]"
+            >
+              <CinematicVideoPlayer
+                videoId={videoId}
+                title={video.title}
+                channelTitle={video.channelTitle}
+                isSavedWatchLater={isSavedWatchLater}
+                onWatchLaterToggle={toggleWatchLater}
+                onInfoClick={() => setShowInfoOverlay(true)}
+                onTheaterToggle={setIsTheaterMode}
+              />
+            </motion.div>
+          </div>
+        </div>
+
+        {/* 2. Beautiful Centered Video Details Section */}
+        <main className="max-w-[1600px] w-full mx-auto px-4 sm:px-6 md:px-12 lg:px-16 xl:px-24 py-6 md:py-10 space-y-6">
+          <motion.div 
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 pt-4 text-left"
+          >
+            <div className="space-y-2.5">
+              <h1 className="text-2xl md:text-3xl lg:text-4xl font-extrabold tracking-tight leading-tight max-w-4xl text-white">
+                {video.title}
+              </h1>
+              <div className="flex items-center gap-4 text-xs font-black uppercase tracking-wider text-white/30 font-mono">
+                <span>{parseInt(video.views).toLocaleString()} Views</span>
+                <span className="text-orange-500">•</span>
+                <span>Published {new Date(video.publishedAt).toLocaleDateString()}</span>
+              </div>
+            </div>
+
+            {/* Action Row */}
+            <div className="flex items-center gap-2.5 overflow-x-auto hide-scrollbar w-full pb-3 md:pb-0 md:w-auto md:flex-wrap whitespace-nowrap">
+              {/* Like Pill */}
+              <button
+                onClick={handleLike}
+                className={`flex items-center gap-2 px-4 py-2.5 md:px-6 md:py-3.5 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest transition-all border cursor-pointer select-none flex-shrink-0 ${
+                  hasLiked 
+                    ? 'bg-orange-500 border-orange-500/25 text-white shadow-lg shadow-orange-500/30 hover:bg-orange-600' 
+                    : 'bg-white/5 border-white/10 hover:border-orange-500/40 text-white hover:bg-white/10 hover:text-orange-500'
+                }`}
               >
-                <CinematicVideoPlayer 
-                  videoId={videoId} 
-                  title={video.title} 
-                  onTheaterToggle={setIsTheaterMode}
-                />
-              </motion.div>
-            )}
+                <ThumbsUp size={14} className={hasLiked ? 'fill-current' : 'text-white/60'} />
+                <span>{likesCount.toLocaleString()} Likes</span>
+              </button>
 
-            {/* Video metadata Details */}
-            <div className="space-y-6">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div className="space-y-2">
-                  <h1 className="text-2xl md:text-3xl font-black tracking-tight">{video.title}</h1>
-                  <div className="flex items-center gap-4 text-xs font-bold text-white/40 uppercase tracking-widest">
-                    <span>{parseInt(video.views).toLocaleString()} Views</span>
-                    <span>•</span>
-                    <span>{new Date(video.publishedAt).toLocaleDateString()}</span>
-                  </div>
-                </div>
+              {/* Watch Later Pill */}
+              <button
+                onClick={toggleWatchLater}
+                className={`flex items-center gap-2 px-4 py-2.5 md:px-6 md:py-3.5 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest transition-all border cursor-pointer select-none flex-shrink-0 ${
+                  isSavedWatchLater 
+                    ? 'bg-orange-500/10 border-orange-500/20 text-orange-500 font-bold' 
+                    : 'bg-white/5 border-white/10 hover:border-orange-500/40 text-white hover:bg-white/10 hover:text-orange-500'
+                }`}
+              >
+                <Clock size={14} />
+                <span>Watch Later</span>
+              </button>
 
-                {/* Video actions panel */}
-                <div className="flex flex-wrap items-center gap-3">
-                  {/* Like Button */}
-                  <button 
-                    onClick={handleLike}
-                    className={`flex items-center gap-2 px-6 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all border ${hasLiked ? 'bg-orange-500 border-orange-500/20 text-white shadow-lg shadow-orange-500/20' : 'glass-button text-white'}`}
-                  >
-                    <ThumbsUp size={16} className={hasLiked ? 'fill-current' : 'text-white/60'} />
-                    {likesCount.toLocaleString()} Likes
-                  </button>
+              {/* Share Pill */}
+              <button
+                onClick={copyShareLink}
+                className="flex items-center gap-2 px-4 py-2.5 md:px-6 md:py-3.5 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest transition-all border bg-white/5 border-white/10 hover:border-orange-500/40 text-white hover:bg-white/10 hover:text-orange-500 cursor-pointer select-none flex-shrink-0"
+              >
+                <Share2 size={14} />
+                <span>Share</span>
+              </button>
 
-                  {/* Share button */}
-                  <button onClick={copyShareLink} className="glass-button p-3.5 rounded-2xl hover:text-orange-500" title="Copy Link">
-                    <Share2 size={18} />
-                  </button>
-
-                  {/* Add to Watch Later */}
-                  <button 
-                    onClick={toggleWatchLater} 
-                    className={`p-3.5 rounded-2xl border transition-all ${isSavedWatchLater ? 'bg-orange-500/10 border-orange-500/20 text-orange-500' : 'glass-button text-white/60'}`}
-                    title="Watch Later"
-                  >
-                    <Clock size={18} />
-                  </button>
-
-                  {/* Add to Favorites */}
-                  <button 
-                    onClick={toggleFavorite} 
-                    className={`p-3.5 rounded-2xl border transition-all ${isSavedFavorites ? 'bg-red-500/10 border-red-500/20 text-red-500' : 'glass-button text-white/60'}`}
-                    title="Add to Favorites"
-                  >
-                    <Heart size={18} className={isSavedFavorites ? 'fill-current' : ''} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Creator details panel */}
-              <div className="glass-premium p-8 rounded-[2.5rem] border-white/5 space-y-6 shadow-2xl">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-orange-500 flex items-center justify-center font-black text-white text-lg">
-                      {video.channelTitle?.charAt(0)}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-lg">{video.channelTitle}</h3>
-                      <p className="text-[10px] text-white/30 uppercase tracking-[0.15em] font-mono">Premium Partner</p>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={handleSubscribe}
-                    className={`px-8 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${isSubscribed ? 'bg-white/10 text-white/60 border border-white/10' : 'bg-white text-black hover:bg-orange-500 hover:text-white'}`}
-                  >
-                    {isSubscribed ? 'Subscribed' : 'Subscribe'}
-                  </button>
-                </div>
-                <div className="h-px bg-white/5 w-full" />
-                <div className="space-y-4">
-                  <p className={`text-sm text-white/60 leading-relaxed font-medium ${isDescriptionExpanded ? '' : 'line-clamp-3'}`}>
-                    {video.description}
-                  </p>
-                  <button onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)} className="text-xs font-black uppercase tracking-widest text-orange-500">
-                    {isDescriptionExpanded ? 'Show Less' : 'Read More'}
-                  </button>
-                </div>
-              </div>
-
-              {/* Enhanced Comments System UI */}
-              <div className="glass-premium p-8 rounded-[2.5rem] border-white/5 space-y-8 shadow-2xl">
-                <div className="flex items-center gap-3 text-orange-500">
-                  <MessageSquare size={20} />
-                  <h3 className="font-bold text-lg text-white">Discussions ({comments.length})</h3>
-                </div>
-
-                {/* Comment Submission form */}
-                <form onSubmit={handleCommentSubmit} className="flex gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-orange-500/20 text-orange-500 flex items-center justify-center font-black text-sm flex-shrink-0">
-                    A
-                  </div>
-                  <div className="flex-1 relative">
-                    <input 
-                      type="text" 
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      placeholder="Add public comment..." 
-                      className="w-full bg-white/5 border border-white/10 px-5 py-3.5 pr-12 rounded-2xl text-white outline-none focus:border-orange-500 transition-all font-medium text-xs"
-                    />
-                    <button type="submit" className="absolute right-3.5 top-1/2 -translate-y-1/2 p-2 text-white/30 hover:text-orange-500 transition-all">
-                      <Send size={14} />
-                    </button>
-                  </div>
-                </form>
-
-                {/* Comments List */}
-                <div className="space-y-6 pt-4">
-                  {comments.map((comment) => (
-                    <div key={comment.id} className="flex gap-4">
-                      <img src={comment.avatar} className="w-10 h-10 rounded-xl object-cover" alt="" />
-                      <div className="space-y-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-white">{comment.author}</span>
-                          <span className="text-[9px] font-bold text-white/20 uppercase tracking-wide">{comment.time}</span>
-                        </div>
-                        <p className="text-xs text-white/70 leading-relaxed font-medium">{comment.text}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              {/* More Pill */}
+              <button
+                onClick={() => setShowInfoOverlay(true)}
+                className="p-2.5 md:p-3.5 rounded-full border bg-white/5 border-white/10 hover:border-orange-500/40 text-white hover:bg-white/10 hover:text-orange-500 cursor-pointer transition-all flex-shrink-0"
+                title="More Info"
+              >
+                <Plus size={16} />
+              </button>
             </div>
-          </div>
-
-          {/* Sidebar Column */}
-          <div className="space-y-8">
-            <h2 className="text-xl font-black tracking-tight uppercase tracking-wider text-white/40">Recommended for You</h2>
-            <div className="flex flex-col gap-6">
-              {relatedVideos.map((v) => (
-                <div 
-                  key={v.videoId} 
-                  onClick={() => handleVideoSelect(v)} 
-                  className="flex gap-4 cursor-pointer group glass-premium p-3 rounded-3xl hover:border-orange-500/30 transition-all"
-                >
-                  <div className="w-36 aspect-video rounded-2xl overflow-hidden flex-shrink-0 relative bg-white/5">
-                    <img src={v.thumbnail} alt="" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                  </div>
-                  <div className="flex flex-col justify-center gap-1.5 min-w-0">
-                    <h4 className="text-xs font-black text-white line-clamp-2 leading-snug group-hover:text-orange-500 transition-colors">
-                      {v.title}
-                    </h4>
-                    <p className="text-[9px] font-black text-white/30 uppercase truncate">{v.channelTitle}</p>
-                  </div>
-                </div>
-              ))}
-              
-              {relatedVideos.length === 0 && (
-                Array.from({ length: 4 }).map((_, idx) => (
-                  <div key={idx} className="flex gap-4 p-3 animate-pulse">
-                    <div className="w-36 aspect-video bg-white/5 rounded-2xl" />
-                    <div className="flex-1 py-2 space-y-3">
-                      <div className="h-3 bg-white/10 rounded w-5/6" />
-                      <div className="h-2.5 bg-white/5 rounded w-1/2" />
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      </main>
-
-      <div className="fixed bottom-8 right-8 z-50">
-        <div className="relative">
-          <div className="absolute inset-0 bg-orange-500 rounded-full blur-xl opacity-20 animate-pulse" />
-          <div className="w-12 h-12 glass-button rounded-2xl flex items-center justify-center text-orange-500"><Sparkles size={20} /></div>
-        </div>
+          </motion.div>
+        </main>
       </div>
     </div>
   );

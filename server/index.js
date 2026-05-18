@@ -17,12 +17,21 @@ const API_KEY = process.env.YOUTUBE_API_KEY;
 // Normalize YouTube Response
 const normalizeVideo = (item) => {
   const videoId = typeof item.id === 'string' ? item.id : item.id.videoId;
+  
+  // Safe default fallback thumbnail (sleek, high-quality cinematic abstract banner)
+  const fallbackThumbnail = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop';
+  
   return {
     id: videoId,
     videoId: videoId,
     title: item.snippet.title,
     description: item.snippet.description,
-    thumbnail: item.snippet.thumbnails?.maxres?.url || item.snippet.thumbnails?.high?.url || item.snippet.thumbnails?.medium?.url,
+    thumbnail: item.snippet.thumbnails?.maxres?.url || 
+               item.snippet.thumbnails?.standard?.url || 
+               item.snippet.thumbnails?.high?.url || 
+               item.snippet.thumbnails?.medium?.url || 
+               item.snippet.thumbnails?.default?.url || 
+               fallbackThumbnail,
     channelTitle: item.snippet.channelTitle,
     channelId: item.snippet.channelId,
     publishedAt: item.snippet.publishedAt,

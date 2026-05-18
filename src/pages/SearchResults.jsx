@@ -12,6 +12,9 @@ const SearchResults = () => {
   const mouseGlowRef = useRef(null);
 
   useEffect(() => {
+    const isHoverDevice = window.matchMedia('(hover: hover)').matches;
+    if (!isHoverDevice) return;
+
     const handleMouseMove = (e) => {
       if (mouseGlowRef.current) {
         mouseGlowRef.current.style.left = `${e.clientX}px`;
@@ -55,7 +58,7 @@ const SearchResults = () => {
         onVideoSelect={handleVideoSelect}
       />
 
-      <main className="max-w-[1800px] mx-auto pt-32 pb-20 px-4 md:px-10">
+      <main className="max-w-[1800px] mx-auto pt-32 pb-20 px-6 md:px-12 lg:px-16 xl:px-24">
         <CinematicMovieGrid 
           movies={videos} 
           title={`Search Results: ${searchTerm}`} 

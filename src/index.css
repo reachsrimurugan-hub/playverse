@@ -11,8 +11,13 @@
 }
 
 @layer base {
+  html {
+    scroll-behavior: auto !important;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
   body {
-    @apply bg-[#0a0502] text-white overflow-x-hidden selection:bg-orange-500/30;
+    @apply bg-[#0a0502] text-white selection:bg-orange-500/30;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 }
@@ -89,19 +94,7 @@
   @apply border border-orange-500/30 shadow-[0_0_15px_rgba(249,115,22,0.2)];
 }
 
-.custom-scrollbar::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  @apply bg-white/20 rounded-full hover:bg-orange-500 transition-all duration-300;
-  border: 2px solid #0a0502;
-}
+/* Use native browser scrollers globally */
 
 .hide-scrollbar::-webkit-scrollbar {
   display: none;

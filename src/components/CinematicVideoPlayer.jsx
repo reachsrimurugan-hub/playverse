@@ -3,11 +3,47 @@ import YouTube from 'react-youtube';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Play, Pause, Volume2, VolumeX, Maximize, Settings, 
-  SkipForward, RotateCcw, RotateCw, List, Subtitles,
-  ChevronUp, ChevronDown, Monitor, Tv
+  Tv, Eye, Sparkles, Sliders, ChevronDown, Check,
+  RotateCcw, RotateCw, Subtitles, SkipForward, Info, Clock
 } from 'lucide-react';
 
-const CinematicVideoPlayer = ({ videoId, title, onTheaterToggle }) => {
+// Static options object outside of component render scope.
+// This prevents react-youtube from detecting new opts references 
+// and recreating/reloading the YouTube iframe when local state changes.
+const YOUTUBE_PLAYER_OPTS = {
+  height: '100%',
+  width: '100%',
+  playerVars: {
+    autoplay: 1,
+    controls: 0,
+    modestbranding: 1,
+    rel: 0,
+    showinfo: 0,
+    iv_load_policy: 3,
+    enablejsapi: 1,
+    disablekb: 1,
+  }
+};
+
+const QUALITY_MAP = {
+  'Auto': 'auto',
+  '1080p': 'hd1080',
+  '720p': 'hd720',
+  '480p': 'large',
+  '360p': 'medium',
+  '240p': 'small',
+  '144p': 'tiny'
+};
+
+const CinematicVideoPlayer = ({ 
+  videoId, 
+  title, 
+  channelTitle = "PlayVerse", 
+  onTheaterToggle,
+  isSavedWatchLater = false,
+  onWatchLaterToggle,
+  onInfoClick
+}) => {
   const [player, setPlayer] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
@@ -16,14 +52,69 @@ const CinematicVideoPlayer = ({ videoId, title, onTheaterToggle }) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [isBuffering, setIsBuffering] = useState(true);
   const [showControls, setShowControls] = useState(true);
-  const [showVolumeMenu, setShowVolumeMenu] = useState(false);
-  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
-  const [playbackRate, setPlaybackRate] = useState(1);
+  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
+  
+  // Custom quality & speed controls
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const [settingsTab, setSettingsTab] = useState('main'); // 'main' | 'quality' | 'speed'
+  const [currentQuality, setCurrentQuality] = useState('Auto');
+  const [currentSpeed, setCurrentSpeed] = useState('1x');
+  const [availableQualities, setAvailableQualities] = useState(['Auto', '1080p', '720p', '480p', '360p']);
   const [isTheaterMode, setIsTheaterMode] = useState(false);
+  const [showSeekFeedback, setShowSeekFeedback] = useState({ type: 'forward', visible: false });
   
   const containerRef = useRef(null);
   const controlsTimeoutRef = useRef(null);
   const progressRef = useRef(null);
+  const lastTapRef = useRef(null);
+
+  const handlePlayerTap = (e) => {
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 300;
+    
+    if (lastTapRef.current && (now - lastTapRef.current.time < DOUBLE_TAP_DELAY)) {
+      // It's a double tap!
+      const rect = e.currentTarget.getBoundingClientRect();
+      const tapX = e.clientX - rect.left;
+      const width = rect.width;
+      
+      if (tapX < width / 2) {
+        // Double tap on the LEFT: Seek backward 10s
+        if (player) {
+          const seekBack = Math.max(player.getCurrentTime() - 10, 0);
+          player.seekTo(seekBack, true);
+          setCurrentTime(seekBack);
+          
+          // Flash backward seek feedback bubble
+          setShowSeekFeedback({ type: 'back', visible: true });
+          setTimeout(() => setShowSeekFeedback({ type: 'back', visible: false }), 600);
+        }
+      } else {
+        // Double tap on the RIGHT: Seek forward 10s
+        if (player) {
+          const seekForward = Math.min(player.getCurrentTime() + 10, duration);
+          player.seekTo(seekForward, true);
+          setCurrentTime(seekForward);
+          
+          // Flash forward seek feedback bubble
+          setShowSeekFeedback({ type: 'forward', visible: true });
+          setTimeout(() => setShowSeekFeedback({ type: 'forward', visible: false }), 600);
+        }
+      }
+      lastTapRef.current = null;
+    } else {
+      // It's a single tap: Toggle Controls visibility
+      lastTapRef.current = { time: now };
+      
+      // Delay single-tap actions slightly to check if a second tap is incoming
+      setTimeout(() => {
+        if (lastTapRef.current && lastTapRef.current.time === now) {
+          setShowControls(prev => !prev);
+          resetControlsTimeout();
+        }
+      }, DOUBLE_TAP_DELAY);
+    }
+  };
 
   // Auto-hide controls when playing
   const resetControlsTimeout = () => {
@@ -33,8 +124,9 @@ const CinematicVideoPlayer = ({ videoId, title, onTheaterToggle }) => {
     if (isPlaying) {
       controlsTimeoutRef.current = setTimeout(() => {
         setShowControls(false);
-        setShowVolumeMenu(false);
-        setShowSpeedMenu(false);
+        setShowVolumeSlider(false);
+        setShowSettingsMenu(false);
+        setSettingsTab('main');
       }, 3000);
     }
   };
@@ -52,7 +144,7 @@ const CinematicVideoPlayer = ({ videoId, title, onTheaterToggle }) => {
     if (player && isPlaying) {
       interval = setInterval(() => {
         setCurrentTime(player.getCurrentTime());
-      }, 500);
+      }, 400);
     }
     return () => clearInterval(interval);
   }, [player, isPlaying]);
@@ -135,19 +227,40 @@ const CinematicVideoPlayer = ({ videoId, title, onTheaterToggle }) => {
     setDuration(ytPlayer.getDuration());
     setIsBuffering(false);
     
-    // Set starting volume
+    // Set starting volume using YouTube Player API
     ytPlayer.setVolume(volume);
+    
     if (isMuted) {
       ytPlayer.mute();
     } else {
       ytPlayer.unMute();
     }
+
+    // Populate dynamic quality settings if available
+    try {
+      const levels = ytPlayer.getAvailableQualityLevels();
+      if (levels && levels.length > 0) {
+        const qualityLabelsMap = {
+          'auto': 'Auto',
+          'hd1080': '1080p',
+          'hd720': '720p',
+          'large': '480p',
+          'medium': '360p',
+          'small': '240p',
+          'tiny': '144p'
+        };
+        const mappedLevels = levels.map(l => qualityLabelsMap[l] || l).filter(Boolean);
+        // Include 'Auto' at the front if not present
+        if (!mappedLevels.includes('Auto')) mappedLevels.unshift('Auto');
+        setAvailableQualities(mappedLevels);
+      }
+    } catch (e) {
+      console.warn("Quality levels not loaded yet:", e);
+    }
   };
 
   const handleStateChange = (event) => {
-    // YT.PlayerState: -1 (unstarted), 0 (ended), 1 (playing), 2 (paused), 3 (buffering), 5 (video cued)
     const state = event.data;
-    
     if (state === 1) {
       setIsPlaying(true);
       setIsBuffering(false);
@@ -170,6 +283,8 @@ const CinematicVideoPlayer = ({ videoId, title, onTheaterToggle }) => {
     resetControlsTimeout();
   };
 
+  // MUTE/UNMUTE IMPLEMENTATION (No reloads!)
+  // Simply calls player.mute() or player.unMute() without altering component properties.
   const toggleMute = () => {
     if (!player) return;
     if (isMuted) {
@@ -183,7 +298,7 @@ const CinematicVideoPlayer = ({ videoId, title, onTheaterToggle }) => {
     resetControlsTimeout();
   };
 
-  const handleVolumeChange = (e) => {
+  const handleVolumeSliderChange = (e) => {
     if (!player) return;
     const newVol = parseInt(e.target.value);
     setVolume(newVol);
@@ -210,11 +325,24 @@ const CinematicVideoPlayer = ({ videoId, title, onTheaterToggle }) => {
     resetControlsTimeout();
   };
 
-  const changeSpeed = (rate) => {
+  // Dynamic Quality Switcher via API
+  const handleQualitySelect = (qualityLabel) => {
     if (!player) return;
-    player.setPlaybackRate(rate);
-    setPlaybackRate(rate);
-    setShowSpeedMenu(false);
+    const ytQualityValue = QUALITY_MAP[qualityLabel] || 'auto';
+    player.setPlaybackQuality(ytQualityValue);
+    setCurrentQuality(qualityLabel);
+    setShowSettingsMenu(false);
+    setSettingsTab('main');
+    resetControlsTimeout();
+  };
+
+  // Speed Switcher
+  const handleSpeedSelect = (speedLabel, speedValue) => {
+    if (!player) return;
+    player.setPlaybackRate(speedValue);
+    setCurrentSpeed(speedLabel);
+    setShowSettingsMenu(false);
+    setSettingsTab('main');
     resetControlsTimeout();
   };
 
@@ -237,7 +365,6 @@ const CinematicVideoPlayer = ({ videoId, title, onTheaterToggle }) => {
     resetControlsTimeout();
   };
 
-  // Helper format time
   const formatTime = (secs) => {
     if (isNaN(secs)) return '0:00';
     const m = Math.floor(secs / 60);
@@ -252,27 +379,13 @@ const CinematicVideoPlayer = ({ videoId, title, onTheaterToggle }) => {
       ref={containerRef}
       onMouseMove={resetControlsTimeout}
       onMouseLeave={() => isPlaying && setShowControls(false)}
-      className="relative w-full aspect-video rounded-[2.5rem] overflow-hidden group shadow-[0_30px_100px_rgba(0,0,0,0.8)] bg-black border border-white/5"
+      className="relative w-full aspect-video rounded-2xl md:rounded-[2.5rem] overflow-hidden group shadow-[0_20px_80px_rgba(0,0,0,0.9)] bg-black border border-white/5"
     >
-      {/* react-youtube Component */}
-      <div className="absolute inset-0 w-full h-full pointer-events-none">
+      {/* Background Iframe */}
+      <div className="absolute inset-0 w-full h-full pointer-events-none scale-105 select-none">
         <YouTube
           videoId={videoId}
-          opts={{
-            height: '100%',
-            width: '100%',
-            playerVars: {
-              autoplay: 1,
-              mute: isMuted ? 1 : 0,
-              controls: 0,
-              modestbranding: 1,
-              rel: 0,
-              showinfo: 0,
-              iv_load_policy: 3,
-              enablejsapi: 1,
-              disablekb: 1
-            }
-          }}
+          opts={YOUTUBE_PLAYER_OPTS}
           onReady={handleReady}
           onStateChange={handleStateChange}
           className="w-full h-full"
@@ -280,28 +393,54 @@ const CinematicVideoPlayer = ({ videoId, title, onTheaterToggle }) => {
         />
       </div>
 
-      {/* Click-to-Play Overlay */}
+      {/* Click-to-Play Area Overlay */}
       <div 
-        onClick={togglePlay}
+        onClick={handlePlayerTap}
         className="absolute inset-0 z-10 cursor-pointer"
       />
 
-      {/* Buffering Loading Overlay */}
+      {/* Animated double-tap seek feedback bubbles */}
+      <AnimatePresence>
+        {showSeekFeedback.visible && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            className={`absolute top-1/2 -translate-y-1/2 z-40 bg-black/60 backdrop-blur-md px-6 py-4 rounded-full flex flex-col items-center justify-center gap-1 text-white border border-white/10 ${
+              showSeekFeedback.type === 'back' ? 'left-[15%]' : 'right-[15%]'
+            }`}
+          >
+            {showSeekFeedback.type === 'back' ? (
+              <>
+                <RotateCcw size={24} className="text-orange-500 animate-pulse" />
+                <span className="text-[10px] font-black tracking-widest font-mono">-10s</span>
+              </>
+            ) : (
+              <>
+                <RotateCw size={24} className="text-orange-500 animate-pulse" />
+                <span className="text-[10px] font-black tracking-widest font-mono">+10s</span>
+              </>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Buffering Indicator overlay */}
       <AnimatePresence>
         {isBuffering && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-none"
+            className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/75 backdrop-blur-sm pointer-events-none"
           >
-            <div className="relative w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
+            <div className="relative w-14 h-14 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
             <p className="mt-4 text-[10px] font-black uppercase tracking-[0.25em] text-orange-500">Buffering Stream</p>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Interactive Controls Overlay */}
+      {/* Sleek Custom Controls panel */}
       <AnimatePresence>
         {showControls && (
           <motion.div 
@@ -309,66 +448,133 @@ const CinematicVideoPlayer = ({ videoId, title, onTheaterToggle }) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="absolute inset-0 z-30 bg-gradient-to-t from-black/90 via-transparent to-black/30 flex flex-col justify-between p-6 md:p-8 pointer-events-none"
+            className="absolute inset-0 z-35 bg-gradient-to-t from-black/95 via-transparent to-black/60 flex flex-col justify-between p-4 sm:p-6 md:p-10 pointer-events-none"
           >
-            {/* Top Bar info */}
-            <div className="flex items-center justify-between w-full pointer-events-auto">
-              <div className="flex items-center gap-3">
-                <span className="glass-orange px-3 py-1 rounded-full text-[8px] font-black tracking-widest uppercase text-orange-500">
-                  PlayVerse Live
-                </span>
-                <h4 className="text-white/60 font-bold text-xs uppercase tracking-wider line-clamp-1 max-w-sm md:max-w-md">
-                  {title}
-                </h4>
+            {/* Top Row Info */}
+            <div className="flex items-start justify-between w-full pointer-events-auto mt-2">
+              <div className="hidden sm:flex items-center gap-4">
+                {/* Channel/profile avatar badge */}
+                <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center font-black text-black text-lg overflow-hidden border border-white/20 shadow-2xl">
+                  {channelTitle ? (
+                    <img 
+                      src={`https://api.dicebear.com/7.x/initials/svg?seed=${channelTitle}&backgroundColor=f97316`} 
+                      alt="" 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    'PV'
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <h4 className="text-white font-extrabold text-base md:text-xl tracking-tight leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                    {title}
+                  </h4>
+                  <div className="flex items-center gap-2">
+                    <span className="bg-orange-500 text-white px-2.5 py-0.5 rounded-full text-[8px] font-black tracking-widest uppercase shadow-lg shadow-orange-500/30">
+                      CINEMATIC PLAYER
+                    </span>
+                    <span className="text-white/60 text-[10px] font-extrabold tracking-wide uppercase font-mono drop-shadow">
+                      {channelTitle || 'PlayVerse Stream'}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button className="p-2.5 glass rounded-xl text-white/70 hover:text-white transition-all">
-                  <Subtitles size={16} />
+
+              {/* Minimal status indicator on mobile/tablet */}
+              <div className="sm:hidden flex items-center gap-2">
+                <span className="bg-orange-500/20 text-orange-500 border border-orange-500/30 px-2 py-0.5 rounded-md text-[8px] font-black tracking-widest uppercase font-mono">
+                  PLAYING
+                </span>
+              </div>
+
+              {/* Right Side Immersive Actions */}
+              <div className="flex items-center gap-4 sm:gap-6 bg-black/25 backdrop-blur-md border border-white/5 rounded-2xl px-4 py-2 md:px-5 md:py-2.5">
+                <button
+                  onClick={onWatchLaterToggle}
+                  className={`flex flex-col items-center gap-0.5 transition-colors group/btn cursor-pointer ${
+                    isSavedWatchLater ? 'text-orange-500' : 'text-white/60 hover:text-orange-500'
+                  }`}
+                  title="Watch Later"
+                >
+                  <Clock size={16} className="group-hover/btn:scale-110 transition-transform" />
+                  <span className="text-[7px] font-black uppercase tracking-wider font-mono">Watch later</span>
+                </button>
+                <button
+                  onClick={onInfoClick}
+                  className="flex flex-col items-center gap-0.5 text-white/60 hover:text-orange-500 transition-colors group/btn cursor-pointer"
+                  title="Video Info"
+                >
+                  <Info size={16} className="group-hover/btn:scale-110 transition-transform" />
+                  <span className="text-[7px] font-black uppercase tracking-wider font-mono">Info</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setShowSettingsMenu(!showSettingsMenu);
+                    setSettingsTab('main');
+                  }}
+                  className="flex flex-col items-center gap-0.5 text-white/60 hover:text-orange-500 transition-colors group/btn cursor-pointer"
+                  title="More Options"
+                >
+                  <Sliders size={16} className="group-hover/btn:scale-110 transition-transform" />
+                  <span className="text-[7px] font-black uppercase tracking-wider font-mono">More</span>
                 </button>
               </div>
             </div>
 
-            {/* Bottom Panel */}
-            <div className="space-y-4 md:space-y-6 w-full pointer-events-auto">
-              {/* Timeline Seeking Progress Bar */}
+            {/* Bottom Controls Panel */}
+            <div className="space-y-4 md:space-y-6 w-full pointer-events-auto mb-2">
+              {/* Timeline Progress Bar */}
               <div 
                 ref={progressRef}
                 onClick={handleProgressSeek}
-                className="relative group/progress h-1.5 w-full bg-white/10 rounded-full overflow-visible cursor-pointer transition-all hover:h-2"
+                className="relative group/progress h-1.5 w-full bg-white/10 rounded-full cursor-pointer transition-all hover:h-2"
               >
                 <div 
-                  className="h-full bg-gradient-to-r from-orange-600 to-orange-400 shadow-[0_0_15px_rgba(249,115,22,0.6)] rounded-full"
+                  className="h-full bg-gradient-to-r from-orange-600 to-orange-400 rounded-full relative"
                   style={{ width: `${progressPercentage}%` }}
-                />
-                <div 
-                  className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-2xl scale-0 group-hover/progress:scale-100 transition-transform"
-                  style={{ left: `calc(${progressPercentage}% - 8px)` }}
-                />
+                >
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4.5 h-4.5 bg-orange-500 rounded-full shadow-[0_0_15px_rgba(249,115,22,0.8)] border-2 border-white scale-0 group-hover/progress:scale-100 transition-transform" />
+                </div>
               </div>
 
               {/* Action Buttons panel */}
               <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-6">
-                  {/* Play Pause button */}
+                <div className="flex items-center gap-4 sm:gap-5">
+                  {/* Circular Orange Play/Pause Button */}
                   <button 
                     onClick={togglePlay}
-                    className="w-12 h-12 bg-orange-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/20 hover:scale-110 transition-all"
+                    className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-500 text-white rounded-full flex items-center justify-center shadow-lg shadow-orange-500/40 hover:scale-105 active:scale-95 transition-all cursor-pointer"
                   >
-                    {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" className="ml-1" />}
+                    {isPlaying ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" className="ml-0.5" />}
                   </button>
 
-                  {/* Volume settings */}
-                  <div 
-                    className="relative flex items-center gap-2"
-                    onMouseEnter={() => setShowVolumeMenu(true)}
-                    onMouseLeave={() => setShowVolumeMenu(false)}
+                  {/* Skip Forward Button */}
+                  <button
+                    onClick={() => {
+                      if (!player) return;
+                      const forwardTime = Math.min(player.getCurrentTime() + 10, duration);
+                      player.seekTo(forwardTime, true);
+                      setCurrentTime(forwardTime);
+                      resetControlsTimeout();
+                    }}
+                    className="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-white/70 hover:text-white transition-all cursor-pointer"
+                    title="Forward 10s"
                   >
-                    <button onClick={toggleMute} className="text-white/60 hover:text-white transition-colors">
-                      {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                    <SkipForward size={16} />
+                  </button>
+
+                  {/* Volume Slider Widget - Desktop/Tablet Only */}
+                  <div 
+                    className="hidden sm:flex relative items-center gap-2"
+                    onMouseEnter={() => setShowVolumeSlider(true)}
+                    onMouseLeave={() => setShowVolumeSlider(false)}
+                  >
+                    <button onClick={toggleMute} className="text-white/60 hover:text-white transition-colors cursor-pointer">
+                      {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
                     </button>
                     
                     <AnimatePresence>
-                      {showVolumeMenu && (
+                      {showVolumeSlider && (
                         <motion.div 
                           initial={{ width: 0, opacity: 0 }}
                           animate={{ width: 80, opacity: 1 }}
@@ -380,67 +586,132 @@ const CinematicVideoPlayer = ({ videoId, title, onTheaterToggle }) => {
                             min="0" 
                             max="100"
                             value={isMuted ? 0 : volume}
-                            onChange={handleVolumeChange}
-                            className="w-20 h-1 bg-white/25 rounded-lg appearance-none cursor-pointer accent-orange-500"
+                            onChange={handleVolumeSliderChange}
+                            className="w-20 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-orange-500"
                           />
                         </motion.div>
                       )}
                     </AnimatePresence>
                   </div>
 
-                  {/* Clock timeline info */}
-                  <div className="text-[11px] font-bold text-white/50 uppercase tracking-widest font-mono">
+                  {/* Simple Mute/Unmute Toggle Icon - Mobile Only */}
+                  <button onClick={toggleMute} className="sm:hidden text-white/60 hover:text-white transition-colors cursor-pointer">
+                    {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                  </button>
+
+                  {/* Timestamps */}
+                  <div className="text-[10px] font-black text-white/50 tracking-widest font-mono select-none">
                     <span>{formatTime(currentTime)}</span>
-                    <span className="mx-1 text-white/20">/</span>
+                    <span className="mx-1.5 text-white/20">/</span>
                     <span>{formatTime(duration)}</span>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4">
-                  {/* Playback speed control */}
+                <div className="flex items-center gap-2 sm:gap-4">
+                  {/* Quality & Speed Control (Settings Cog Menu) */}
                   <div className="relative">
                     <button 
-                      onClick={() => setShowSpeedMenu(!showSpeedMenu)}
-                      className="glass-button px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider"
+                      onClick={() => {
+                        setShowSettingsMenu(!showSettingsMenu);
+                        setSettingsTab('main');
+                      }}
+                      className="p-2 sm:p-2.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-white/60 hover:text-orange-500 transition-colors cursor-pointer relative"
+                      title="Playback Settings"
                     >
-                      {playbackRate}x
+                      <Settings size={16} />
+                      <span className="absolute -top-1 -right-1 bg-red-600 text-white font-black text-[7px] px-1 rounded-sm scale-75">HD</span>
                     </button>
 
                     <AnimatePresence>
-                      {showSpeedMenu && (
+                      {showSettingsMenu && (
                         <motion.div 
-                          initial={{ opacity: 0, y: 10 }}
+                          initial={{ opacity: 0, y: 15 }}
                           animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: 10 }}
-                          className="absolute bottom-full right-0 mb-3 w-28 glass-premium rounded-2xl overflow-hidden py-1"
+                          exit={{ opacity: 0, y: 15 }}
+                          className="absolute bottom-full right-0 mb-3 w-48 glass-dark border border-white/10 rounded-2xl overflow-hidden py-2 shadow-2xl z-50 pointer-events-auto"
                         >
-                          {[0.5, 1, 1.5, 2].map((rate) => (
-                            <button
-                              key={rate}
-                              onClick={() => changeSpeed(rate)}
-                              className={`w-full text-left px-4 py-2 text-[10px] font-black ${playbackRate === rate ? 'text-orange-500' : 'text-white/60 hover:text-white'}`}
-                            >
-                              {rate}x Speed
-                            </button>
-                          ))}
+                          {settingsTab === 'main' && (
+                            <div className="space-y-1">
+                              <button 
+                                onClick={() => setSettingsTab('quality')}
+                                className="w-full flex items-center justify-between px-4 py-2.5 text-xs text-white/70 hover:text-white hover:bg-white/5 cursor-pointer"
+                              >
+                                <span className="font-medium">Quality</span>
+                                <span className="text-[10px] text-orange-500 font-bold">{currentQuality}</span>
+                              </button>
+                              <button 
+                                onClick={() => setSettingsTab('speed')}
+                                className="w-full flex items-center justify-between px-4 py-2.5 text-xs text-white/70 hover:text-white hover:bg-white/5 cursor-pointer"
+                              >
+                                <span className="font-medium">Speed</span>
+                                <span className="text-[10px] text-orange-500 font-bold">{currentSpeed}</span>
+                              </button>
+                            </div>
+                          )}
+
+                          {settingsTab === 'quality' && (
+                            <div className="max-h-48 overflow-y-auto custom-scrollbar">
+                              <div className="px-4 py-1.5 text-[9px] font-black text-white/30 uppercase tracking-widest border-b border-white/5 mb-1">
+                                Video Quality
+                              </div>
+                              {availableQualities.map((q) => (
+                                <button
+                                  key={q}
+                                  onClick={() => handleQualitySelect(q)}
+                                  className="w-full flex items-center justify-between px-4 py-2 text-xs text-white/70 hover:text-white hover:bg-white/5 text-left cursor-pointer"
+                                >
+                                  <span>{q}</span>
+                                  {currentQuality === q && <Check size={12} className="text-orange-500" />}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+
+                          {settingsTab === 'speed' && (
+                            <div className="space-y-0.5">
+                              <div className="px-4 py-1.5 text-[9px] font-black text-white/30 uppercase tracking-widest border-b border-white/5 mb-1">
+                                Playback Speed
+                              </div>
+                              {[
+                                { label: '0.25x', val: 0.25 },
+                                { label: '0.5x', val: 0.5 },
+                                { label: '0.75x', val: 0.75 },
+                                { label: 'Normal', val: 1 },
+                                { label: '1.25x', val: 1.25 },
+                                { label: '1.5x', val: 1.5 },
+                                { label: '1.75x', val: 1.75 },
+                                { label: '2x', val: 2 }
+                              ].map((item) => (
+                                <button
+                                  key={item.label}
+                                  onClick={() => handleSpeedSelect(item.label, item.val)}
+                                  className="w-full flex items-center justify-between px-4 py-2 text-xs text-white/70 hover:text-white hover:bg-white/5 text-left cursor-pointer"
+                                >
+                                  <span>{item.label}</span>
+                                  {currentSpeed === item.label && <Check size={12} className="text-orange-500" />}
+                                </button>
+                              ))}
+                            </div>
+                          )}
                         </motion.div>
                       )}
                     </AnimatePresence>
                   </div>
 
-                  {/* Theater mode toggle */}
+                  {/* Theater Mode Toggle */}
                   <button 
                     onClick={toggleTheaterMode}
-                    className={`p-2.5 rounded-xl transition-all ${isTheaterMode ? 'bg-orange-500/20 text-orange-500' : 'glass text-white/60 hover:text-white'}`}
+                    className={`hidden md:block p-2.5 rounded-xl transition-all cursor-pointer ${isTheaterMode ? 'bg-orange-500/25 text-orange-500 border border-orange-500/20' : 'glass text-white/60 hover:text-white hover:border-white/10'}`}
                     title="Theater Mode"
                   >
                     <Tv size={16} />
                   </button>
 
-                  {/* Fullscreen toggle */}
+                  {/* Fullscreen Button */}
                   <button 
                     onClick={toggleFullscreen}
-                    className="p-2.5 glass rounded-xl text-white/60 hover:text-white transition-all"
+                    className="p-2 sm:p-2.5 glass rounded-xl text-white/60 hover:text-white transition-all cursor-pointer hover:border-white/10"
+                    title="Fullscreen"
                   >
                     <Maximize size={16} />
                   </button>
