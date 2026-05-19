@@ -15,7 +15,6 @@ const NAV_LINKS = [
   { label: 'TV Shows', to: '/category/TV Series' },
   { label: 'Movies', to: '/category/Movies' },
   { label: 'Anime', to: '/category/Anime' },
-  { label: 'Trending', to: '/trending' },
 ];
 
 const CinematicNavbar = ({ onSearch, searchResults = [], onVideoSelect }) => {

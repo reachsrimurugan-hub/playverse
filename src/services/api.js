@@ -1,11 +1,37 @@
 import axios from 'axios';
 import { quotaTracker } from '../utils/quotaTracker';
 
-const API_URL = import.meta.env.VITE_API_URL || (
-  typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-    ? 'http://localhost:5000/api'
-    : '/api'
-);
+const getApiUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    
+    // If VITE_API_URL points to localhost, but we're accessing from another device (e.g. local network IP)
+    if (envUrl && (envUrl.includes('localhost') || envUrl.includes('127.0.0.1'))) {
+      if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+        return envUrl.replace('localhost', hostname).replace('127.0.0.1', hostname);
+      }
+      return envUrl;
+    }
+    
+    // Fallback if VITE_API_URL is not defined
+    if (!envUrl) {
+      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        return 'http://localhost:5000/api';
+      }
+      // If accessing via local IP, point to port 5000 on the same host IP
+      if (/^[0-9.]+$/.test(hostname) || hostname.endsWith('.local')) {
+        return `http://${hostname}:5000/api`;
+      }
+      return '/api';
+    }
+  }
+  
+  return envUrl || '/api';
+};
+
+const API_URL = getApiUrl();
 
 export const fetchFromAPI = async (endpoint, params = {}) => {
   try {
