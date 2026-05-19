@@ -5,37 +5,11 @@ import { Sparkles, Shield, User, Lock, Mail, ChevronRight } from 'lucide-react';
 import axios from 'axios';
 import playButtonImg from '../assets/play-button.png';
 
-const getApiUrl = () => {
-  const envUrl = import.meta.env.VITE_API_URL;
-  
-  if (typeof window !== 'undefined') {
-    const hostname = window.location.hostname;
-    
-    // If VITE_API_URL points to localhost, but we're accessing from another device (e.g. local network IP)
-    if (envUrl && (envUrl.includes('localhost') || envUrl.includes('127.0.0.1'))) {
-      if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-        return envUrl.replace('localhost', hostname).replace('127.0.0.1', hostname);
-      }
-      return envUrl;
-    }
-    
-    // Fallback if VITE_API_URL is not defined
-    if (!envUrl) {
-      if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        return 'http://localhost:5000/api';
-      }
-      // If accessing via local IP, point to port 5000 on the same host IP
-      if (/^[0-9.]+$/.test(hostname) || hostname.endsWith('.local')) {
-        return `http://${hostname}:5000/api`;
-      }
-      return '/api';
-    }
-  }
-  
-  return envUrl || '/api';
-};
-
-const API_URL = getApiUrl();
+const API_URL = import.meta.env.VITE_API_URL || (
+  typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:5000/api'
+    : '/api'
+);
 
 const AuthPage = () => {
   const navigate = useNavigate();
@@ -95,7 +69,7 @@ const AuthPage = () => {
             email: normalizedEmail,
             password: form.password
           });
-          
+
           if (response.data.success) {
             const registeredUser = response.data.user;
             localStorage.setItem('nextube_profile', JSON.stringify(registeredUser));
@@ -122,7 +96,7 @@ const AuthPage = () => {
             email: normalizedEmail,
             password: form.password
           });
-          
+
           if (response.data.success) {
             const loggedInUser = response.data.user;
             localStorage.setItem('nextube_profile', JSON.stringify(loggedInUser));
@@ -145,7 +119,7 @@ const AuthPage = () => {
     } catch (fallbackTrigger) {
       // client-side LocalStorage DB Fallback
       const localUsers = JSON.parse(localStorage.getItem('nextube_local_users') || '[]');
-      
+
       // Seed seeded user from users.json if the list is empty
       if (localUsers.length === 0) {
         localUsers.push({
@@ -185,7 +159,7 @@ const AuthPage = () => {
         const user = localUsers.find(
           u => u.email.toLowerCase() === normalizedEmail && u.password === form.password
         );
-        
+
         if (!user) {
           setErrors({ server: 'Invalid email or password' });
           setLoading(false);
@@ -215,18 +189,18 @@ const AuthPage = () => {
       <div className="max-w-md w-full relative z-10 space-y-8">
         {/* PlayVerse Branding */}
         <div className="text-center space-y-3 cursor-pointer" onClick={() => navigate('/')}>
-          <motion.div 
+          <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             className="w-16 h-16 bg-gradient-to-tr from-orange-600 to-orange-400 rounded-[1.25rem] flex items-center justify-center shadow-xl shadow-orange-500/25 mx-auto overflow-hidden p-2 border border-white/10"
           >
-            <img 
-              src={playButtonImg} 
-              alt="PlayVerse" 
-              className="w-full h-full object-contain" 
+            <img
+              src={playButtonImg}
+              alt="PlayVerse"
+              className="w-full h-full object-contain"
             />
           </motion.div>
-          <motion.h1 
+          <motion.h1
             initial={{ y: 10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.1 }}
@@ -238,7 +212,7 @@ const AuthPage = () => {
         </div>
 
         {/* Auth form Glass Card */}
-        <motion.div 
+        <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
@@ -246,13 +220,13 @@ const AuthPage = () => {
         >
           {/* Tabs */}
           <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5 mb-8">
-            <button 
+            <button
               onClick={() => { setActiveTab('login'); setErrors({}); }}
               className={`flex-1 py-3 text-center text-xs font-black uppercase tracking-wider rounded-xl transition-all ${activeTab === 'login' ? 'bg-orange-500 text-white shadow-md' : 'text-white/40 hover:text-white'}`}
             >
               Sign In
             </button>
-            <button 
+            <button
               onClick={() => { setActiveTab('register'); setErrors({}); }}
               className={`flex-1 py-3 text-center text-xs font-black uppercase tracking-wider rounded-xl transition-all ${activeTab === 'register' ? 'bg-orange-500 text-white shadow-md' : 'text-white/40 hover:text-white'}`}
             >
@@ -269,7 +243,7 @@ const AuthPage = () => {
             )}
             <AnimatePresence mode="wait">
               {activeTab === 'register' && (
-                <motion.div 
+                <motion.div
                   key="username-input"
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
@@ -279,8 +253,8 @@ const AuthPage = () => {
                   <label className="text-[10px] font-black text-white/40 uppercase tracking-widest block">Display Name</label>
                   <div className="relative bg-white/5 border border-white/10 px-5 py-3.5 rounded-2xl flex items-center gap-4 focus-within:border-orange-500/40 transition-all">
                     <User size={16} className="text-white/30" />
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       name="name"
                       value={form.name}
                       onChange={handleInputChange}
@@ -297,8 +271,8 @@ const AuthPage = () => {
               <label className="text-[10px] font-black text-white/40 uppercase tracking-widest block">Email Address</label>
               <div className="relative bg-white/5 border border-white/10 px-5 py-3.5 rounded-2xl flex items-center gap-4 focus-within:border-orange-500/40 transition-all">
                 <Mail size={16} className="text-white/30" />
-                <input 
-                  type="email" 
+                <input
+                  type="email"
                   name="email"
                   value={form.email}
                   onChange={handleInputChange}
@@ -313,8 +287,8 @@ const AuthPage = () => {
               <label className="text-[10px] font-black text-white/40 uppercase tracking-widest block">Password</label>
               <div className="relative bg-white/5 border border-white/10 px-5 py-3.5 rounded-2xl flex items-center gap-4 focus-within:border-orange-500/40 transition-all">
                 <Lock size={16} className="text-white/30" />
-                <input 
-                  type="password" 
+                <input
+                  type="password"
                   name="password"
                   value={form.password}
                   onChange={handleInputChange}
@@ -325,8 +299,8 @@ const AuthPage = () => {
               {errors.password && <p className="text-[10px] font-bold text-red-500 uppercase tracking-wider">{errors.password}</p>}
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={loading}
               className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-orange-500/50 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-xl shadow-orange-500/20 active:scale-[0.98] text-xs uppercase tracking-widest"
             >
