@@ -37,6 +37,7 @@ const CinematicNavbar = ({ onSearch, searchResults = [], onVideoSelect }) => {
 
   const { selectedLanguage, setSelectedLanguage } = useLanguage();
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
+  const [mobileLanguageExpanded, setMobileLanguageExpanded] = useState(false);
 
   useEffect(() => {
     const loggedIn = localStorage.getItem('nextube_logged_in') === 'true';
@@ -342,15 +343,16 @@ const CinematicNavbar = ({ onSearch, searchResults = [], onVideoSelect }) => {
                   </button>
 
                   {/* Language Selector Button */}
-                  <div className="hidden lg:block relative" ref={languageRef}>
+                  <div className="relative" ref={languageRef}>
                     <button
                       type="button"
                       onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
-                      className="relative p-2.5 rounded-xl text-[#8e8e93] hover:text-white hover:bg-white/[0.06] transition-colors flex items-center gap-1.5 cursor-pointer"
+                      className="relative p-2 rounded-xl sm:p-2.5 text-[#8e8e93] hover:text-white hover:bg-white/[0.06] transition-colors flex items-center gap-1.5 cursor-pointer"
                       aria-label="Select Language"
                     >
-                      <Globe size={20} />
-                      <span className="text-xs font-bold">{selectedLanguage?.name || 'English'}</span>
+                      <Globe size={20} className="shrink-0" />
+                      <span className="text-xs font-bold sm:inline hidden">{selectedLanguage?.name || 'English'}</span>
+                      <span className="text-xs font-bold inline sm:hidden">{selectedLanguage?.code.toUpperCase() || 'EN'}</span>
                     </button>
 
                     <AnimatePresence>
@@ -359,7 +361,7 @@ const CinematicNavbar = ({ onSearch, searchResults = [], onVideoSelect }) => {
                           initial={{ opacity: 0, y: 15 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: 15 }}
-                          className="absolute top-full right-0 mt-3 w-40 glass-dark border border-white/10 rounded-2xl shadow-3xl overflow-hidden py-2 z-50"
+                          className="absolute top-full right-0 mt-3 w-40 glass-dark border border-white/10 rounded-2xl shadow-3xl overflow-hidden py-2 z-50 max-h-[300px] overflow-y-auto scrollbar-thin"
                         >
                           <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest px-4 py-1.5">Languages</p>
                           {languages.map((lang) => (
@@ -532,6 +534,7 @@ const CinematicNavbar = ({ onSearch, searchResults = [], onVideoSelect }) => {
                 {[
                   { label: 'Home', icon: <Home size={18} />, path: '/' },
                   { label: 'Trending', icon: <Sparkles size={18} />, path: '/trending' },
+                  { label: 'Categories', icon: <Library size={18} />, path: '/categories' },
                   { label: 'My List', icon: <Plus size={18} />, path: '/library' },
                 ].map((item) => (
                   <button
@@ -569,6 +572,51 @@ const CinematicNavbar = ({ onSearch, searchResults = [], onVideoSelect }) => {
                     <ChevronRight size={16} className="opacity-40" />
                   </button>
                 ))}
+
+                {/* Mobile Language Section */}
+                <div className="border-t border-white/5 my-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setMobileLanguageExpanded(!mobileLanguageExpanded)}
+                    className="w-full flex items-center justify-between px-3 py-3 text-sm text-[#8e8e93] hover:text-white transition-colors"
+                  >
+                    <span className="flex items-center gap-3">
+                      <Globe size={18} className="text-[#f97316]" />
+                      <span className="font-semibold">Language: {selectedLanguage?.name || 'English'}</span>
+                    </span>
+                    <ChevronDown size={16} className={`transition-transform duration-300 ${mobileLanguageExpanded ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  <AnimatePresence>
+                    {mobileLanguageExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="pl-8 pr-2 space-y-1 overflow-hidden"
+                      >
+                        {languages.map((lang) => (
+                          <button
+                            key={lang.code}
+                            onClick={() => {
+                              setSelectedLanguage(lang);
+                              setMobileLanguageExpanded(false);
+                              setShowMobileDrawer(false);
+                            }}
+                            className={`w-full flex items-center justify-between py-2.5 text-xs transition-all text-left ${
+                              selectedLanguage?.code === lang.code
+                                ? 'text-[#f97316] font-bold'
+                                : 'text-white/60 hover:text-white'
+                            }`}
+                          >
+                            <span>{lang.name}</span>
+                            {selectedLanguage?.code === lang.code && <div className="w-1.5 h-1.5 rounded-full bg-[#f97316]" />}
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
 
                 <hr className="border-white/[0.08] my-3" />
 
