@@ -8,7 +8,7 @@ import { useLanguage } from '../context/LanguageContext';
 
 const FILTER_PILLS = [
   { label: 'All', to: '/category/All' },
-  { label: 'TV Shows', to: '/category/TV Series' },
+  { label: 'Travel & Vlogs', to: '/category/TV Series' },
   { label: 'Movies', to: '/category/Movies' },
   { label: 'Anime', to: '/category/Anime' },
 ];
@@ -41,6 +41,8 @@ const CategoryPage = () => {
         results = await searchVideos(`${languagePrefix}top rated movies`);
       } else if (key === 'New Releases') {
         results = await searchVideos(`${languagePrefix}new movie trailers`);
+      } else if (key === 'TV Series') {
+        results = await searchVideos(`${languagePrefix}travel vlog`);
       } else {
         results = await searchVideos(`${languagePrefix}${key}`);
       }
@@ -61,7 +63,11 @@ const CategoryPage = () => {
     navigate(`/watch/${video.videoId || video.id}`);
   };
 
-  const title = decoded === 'All' || !decoded ? 'All Videos' : decoded;
+  const title = decoded === 'All' || !decoded
+    ? 'All Videos'
+    : decoded === 'TV Series'
+      ? 'Travel & Vlogs'
+      : decoded;
 
   return (
     <div className="min-h-screen bg-black text-white pb-24 lg:pb-8">

@@ -5,15 +5,13 @@ import CinematicHero from '../components/CinematicHero';
 import VideoListItem from '../components/VideoListItem';
 import VideoGridCard from '../components/VideoGridCard';
 import { getPopularMovies, searchVideos } from '../services/cinematicApi';
-import { LayoutGrid, Flame, Film, Music, Tv, Play } from 'lucide-react';
+import { LayoutGrid, Film, Compass, Play } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
 const DASHBOARD_CATEGORIES = [
   { name: 'All', icon: LayoutGrid, term: 'All' },
-  { name: 'Trending', icon: Flame, term: 'Trending' },
-  { name: 'Music', icon: Music, term: 'Music' },
-  { name: 'Movies', icon: Film, term: 'Movies' },
-  { name: 'TV Shows', icon: Tv, term: 'TV Series' },
+  { name: 'Movie Trailers', icon: Film, term: 'Movie Trailers' },
+  { name: 'Vlog & Travel', icon: Compass, term: 'Vlog & Travel' },
 ];
 
 const CinematicDashboard = () => {
@@ -21,6 +19,8 @@ const CinematicDashboard = () => {
   const { selectedLanguage } = useLanguage();
   const [heroVideo, setHeroVideo] = useState(null);
   const [allVideos, setAllVideos] = useState([]);
+  const [trailerVideos, setTrailerVideos] = useState([]);
+  const [travelVideos, setTravelVideos] = useState([]);
   const [visibleCount, setVisibleCount] = useState(20);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -55,18 +55,20 @@ const CinematicDashboard = () => {
         if (searchVal) {
           results = await searchVideos(`${languagePrefix}${searchVal}`);
         } else if (category === 'All') {
-          // Fetch actual general popular videos across all categories from YouTube API
-          if (langName === 'English') {
-            results = await getPopularMovies();
-          } else {
-            results = await searchVideos(`${languagePrefix}popular videos`);
+          // Fetch Movie Trailers and Vlog/Travel content specifically
+          try {
+            const trailersRes = await searchVideos(`${languagePrefix}movie trailer`);
+            setTrailerVideos(trailersRes || []);
+          } catch (err) {
+            console.error('Failed to fetch movie trailers', err);
           }
-        } else if (category === 'Trending') {
-          if (langName === 'English') {
-            results = await getPopularMovies();
-          } else {
-            results = await searchVideos(`${languagePrefix}Trending`);
+          try {
+            const travelRes = await searchVideos(`${languagePrefix}travel vlog`);
+            setTravelVideos(travelRes || []);
+          } catch (err) {
+            console.error('Failed to fetch travel vlogs', err);
           }
+          results = []; // No general feed needed if showing Movie Trailers & Travel Vlogs
         } else {
           results = await searchVideos(`${languagePrefix}${category}`);
         }
@@ -87,13 +89,14 @@ const CinematicDashboard = () => {
   const displayedVideos = useMemo(() => allVideos.slice(0, visibleCount), [allVideos, visibleCount]);
 
   const heroId = heroVideo ? heroVideo.videoId || heroVideo.id : null;
-  const withoutHero = useMemo(
-    () => displayedVideos.filter((v) => (v.videoId || v.id) !== heroId),
-    [displayedVideos, heroId]
-  );
 
-  const trendingRow = useMemo(() => withoutHero.slice(0, 5), [withoutHero]);
-  const popularRow = useMemo(() => withoutHero.slice(5, 15), [withoutHero]);
+  const movieRow = useMemo(() => {
+    return trailerVideos.filter((v) => (v.videoId || v.id) !== heroId);
+  }, [trailerVideos, heroId]);
+
+  const travelRow = useMemo(() => {
+    return travelVideos.filter((v) => (v.videoId || v.id) !== heroId);
+  }, [travelVideos, heroId]);
 
   const handleVideoSelect = useCallback(
     (video) => {
@@ -109,7 +112,7 @@ const CinematicDashboard = () => {
   };
 
   const showWebRows =
-    !searchQuery && activeCategory === 'All' && !loading && withoutHero.length > 0;
+    !searchQuery && activeCategory === 'All' && !loading && (movieRow.length > 0 || travelRow.length > 0);
 
   return (
     <div className="min-h-screen bg-black text-white pb-24 lg:pb-10">
@@ -167,23 +170,22 @@ const CinematicDashboard = () => {
           <>
             <section>
               <div className="flex items-center justify-between mb-4 lg:mb-5">
-                <h2 className="text-lg lg:text-xl font-bold text-white">Trending Now</h2>
-                <Link to="/trending" className="text-sm font-semibold text-[#f97316] hover:text-orange-400">
+                <h2 className="text-lg lg:text-xl font-bold text-white">Movie Trailers</h2>
+                <Link to="/category/Movie Trailers" className="text-sm font-semibold text-[#f97316] hover:text-orange-400">
                   View all
                 </Link>
               </div>
               <div className="hidden md:grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-6">
-                {trendingRow.map((video, idx) => (
+                {movieRow.slice(0, 5).map((video, idx) => (
                   <VideoGridCard key={video.videoId || video.id || idx} video={video} onClick={handleVideoSelect} />
                 ))}
               </div>
               <div className="md:hidden divide-y divide-white/[0.06]">
-                {trendingRow.map((video, idx) => (
+                {movieRow.slice(0, 5).map((video, idx) => (
                   <VideoListItem
                     key={video.videoId || video.id || idx}
                     video={video}
                     onClick={handleVideoSelect}
-                    showTrailerBadge={idx === 1}
                   />
                 ))}
               </div>
@@ -191,19 +193,19 @@ const CinematicDashboard = () => {
 
             <section>
               <div className="flex items-center justify-between mb-4 lg:mb-5">
-                <h2 className="text-lg lg:text-xl font-bold text-white">Popular on PlayVerse</h2>
-                <Link to="/category/All" className="text-sm font-semibold text-[#f97316] hover:text-orange-400">
+                <h2 className="text-lg lg:text-xl font-bold text-white">Vlogs & Travel</h2>
+                <Link to="/category/Vlog & Travel" className="text-sm font-semibold text-[#f97316] hover:text-orange-400">
                   View all
                 </Link>
               </div>
               <div className="hidden md:grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-6">
-                {popularRow.map((video, idx) => (
-                  <VideoGridCard key={video.videoId || video.id || `p-${idx}`} video={video} onClick={handleVideoSelect} />
+                {travelRow.slice(0, 5).map((video, idx) => (
+                  <VideoGridCard key={video.videoId || video.id || `travel-${idx}`} video={video} onClick={handleVideoSelect} />
                 ))}
               </div>
               <div className="md:hidden divide-y divide-white/[0.06]">
-                {popularRow.map((video, idx) => (
-                  <VideoListItem key={video.videoId || video.id || `p-${idx}`} video={video} onClick={handleVideoSelect} />
+                {travelRow.slice(0, 5).map((video, idx) => (
+                  <VideoListItem key={video.videoId || video.id || `travel-${idx}`} video={video} onClick={handleVideoSelect} />
                 ))}
               </div>
             </section>

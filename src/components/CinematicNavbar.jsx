@@ -12,7 +12,7 @@ import playButtonImg from '../assets/play-button.png';
 
 const NAV_LINKS = [
   { label: 'Home', to: '/' },
-  { label: 'TV Shows', to: '/category/TV Series' },
+  { label: 'Travel & Vlogs', to: '/category/TV Series' },
   { label: 'Movies', to: '/category/Movies' },
   { label: 'Anime', to: '/category/Anime' },
 ];

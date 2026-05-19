@@ -51,7 +51,7 @@ const CinematicVideoPlayer = ({
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [isBuffering, setIsBuffering] = useState(true);
-  const [showControls, setShowControls] = useState(true);
+  const [showControls, setShowControls] = useState(false);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   
   // Custom quality & speed controls
@@ -105,40 +105,28 @@ const CinematicVideoPlayer = ({
       }
       lastTapRef.current = null;
     } else {
-      // It's a single tap: Toggle Play/Pause!
+      // It's a single tap: Toggle controls overlay
       lastTapRef.current = { time: now };
       
       // Delay single-tap actions slightly to check if a second tap is incoming
       setTimeout(() => {
         if (lastTapRef.current && lastTapRef.current.time === now) {
-          togglePlay();
-          setShowControls(true);
+          setShowControls((prev) => !prev);
         }
       }, DOUBLE_TAP_DELAY);
     }
   };
 
-  // Auto-hide controls when playing
-  const resetControlsTimeout = () => {
-    setShowControls(true);
-    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
-    
-    if (isPlaying) {
-      controlsTimeoutRef.current = setTimeout(() => {
-        setShowControls(false);
-        setShowVolumeSlider(false);
-        setShowSettingsMenu(false);
-        setSettingsTab('main');
-      }, 3000);
-    }
-  };
+  // Auto-hide controls disabled
+  const resetControlsTimeout = () => {};
+
+
 
   useEffect(() => {
-    resetControlsTimeout();
     return () => {
       if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
     };
-  }, [isPlaying]);
+  }, []);
 
   // Sync timeline interval when video is playing
   useEffect(() => {
@@ -414,8 +402,6 @@ const CinematicVideoPlayer = ({
   return (
     <div 
       ref={containerRef}
-      onMouseMove={resetControlsTimeout}
-      onMouseLeave={() => isPlaying && setShowControls(false)}
       className="relative w-full aspect-video md:rounded-3xl overflow-hidden group bg-black"
     >
       {/* Background Iframe */}

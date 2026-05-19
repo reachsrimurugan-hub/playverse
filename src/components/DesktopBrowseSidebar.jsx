@@ -2,10 +2,9 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutGrid,
-  Tv,
+  Compass,
   Film,
   Sparkles,
-  Flame,
   Star,
   Rocket,
 } from 'lucide-react';
@@ -24,10 +23,9 @@ const genreLinkClass = ({ isActive }) =>
 
 const BROWSE = [
   { label: 'All', to: '/category/All', icon: LayoutGrid },
-  { label: 'TV Shows', to: '/category/TV Series', icon: Tv },
+  { label: 'Travel & Vlogs', to: '/category/TV Series', icon: Compass },
   { label: 'Movies', to: '/category/Movies', icon: Film },
   { label: 'Anime', to: '/category/Anime', icon: Sparkles },
-  { label: 'Trending', to: '/trending', icon: Flame },
   { label: 'Top Rated', to: '/category/Top Rated', icon: Star },
   { label: 'New Releases', to: '/category/New Releases', icon: Rocket },
 ];

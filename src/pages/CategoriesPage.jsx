@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import CinematicNavbar from '../components/CinematicNavbar';
 import DesktopBrowseSidebar from '../components/DesktopBrowseSidebar';
 import {
-  Flame, Film, Tv, Sparkles, Music, Gamepad2, Newspaper, FileText,
+  Flame, Film, Compass, Sparkles, Music, Gamepad2, Newspaper, FileText,
 } from 'lucide-react';
 
 const CategoriesPage = () => {
@@ -12,7 +12,7 @@ const CategoriesPage = () => {
   const categories = [
     { name: 'Trending', icon: Flame, color: 'text-orange-500', path: '/trending' },
     { name: 'Movies', icon: Film, color: 'text-sky-400', path: '/category/Movies' },
-    { name: 'TV Shows', icon: Tv, color: 'text-emerald-400', path: '/category/TV Series' },
+    { name: 'Travel & Vlogs', icon: Compass, color: 'text-emerald-400', path: '/category/TV Series' },
     { name: 'Anime', icon: Sparkles, color: 'text-purple-400', path: '/category/Anime' },
     { name: 'Music', icon: Music, color: 'text-yellow-400', path: '/category/Music' },
     { name: 'Gaming', icon: Gamepad2, color: 'text-blue-400', path: '/category/Gaming' },
