@@ -31,8 +31,12 @@ const CategoryPage = () => {
       const languagePrefix = `${langName} `;
 
       if (key === 'All' || !key) {
-        // Fallback to music in the selected language for main dashboard category
-        results = await searchVideos(`${languagePrefix}Music`);
+        // Fetch actual general popular videos across all categories from YouTube API
+        if (langName === 'English') {
+          results = await getPopularMovies();
+        } else {
+          results = await searchVideos(`${languagePrefix}popular videos`);
+        }
       } else if (key === 'Top Rated') {
         results = await searchVideos(`${languagePrefix}top rated movies`);
       } else if (key === 'New Releases') {

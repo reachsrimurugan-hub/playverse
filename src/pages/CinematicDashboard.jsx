@@ -55,10 +55,18 @@ const CinematicDashboard = () => {
         if (searchVal) {
           results = await searchVideos(`${languagePrefix}${searchVal}`);
         } else if (category === 'All') {
-          // Home displays Music content filtered by selected language
-          results = await searchVideos(`${languagePrefix}Music`);
+          // Fetch actual general popular videos across all categories from YouTube API
+          if (langName === 'English') {
+            results = await getPopularMovies();
+          } else {
+            results = await searchVideos(`${languagePrefix}popular videos`);
+          }
         } else if (category === 'Trending') {
-          results = await searchVideos(`${languagePrefix}Trending Music`);
+          if (langName === 'English') {
+            results = await getPopularMovies();
+          } else {
+            results = await searchVideos(`${languagePrefix}Trending`);
+          }
         } else {
           results = await searchVideos(`${languagePrefix}${category}`);
         }
